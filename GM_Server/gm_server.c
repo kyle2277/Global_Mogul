@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     //initialize values in server_DTP socket
     server_DTP.sin_family = AF_INET;
-    server_DTP.sin_port = htons(atoi(argv[1]-1));
+    server_DTP.sin_port = htons(atoi(argv[1])-1);
     server_DTP.sin_addr.s_addr = INADDR_ANY;
     bzero(&server_DTP.sin_zero, 8);
 
@@ -63,16 +63,21 @@ int main(int argc, char *argv[]) {
 
     // instruct kernel to listen on this socket
     if((listen(sock_PI, MAX_CLIENTS)) == ERROR) {
-        perror("listen");
+        perror("listen_PI");
+        exit(-1);
+    }
+    if((listen(sock_DTP, MAX_CLIENTS)) == ERROR) {
+        perror("listen DTP");
         exit(-1);
     }
 
-    while(true) {
-        char input[MAX_DATA];
-        fgets(input, MAX_DATA, stdin);
-        if(strstr(input, "quit")) {
-            break;
-        }
+    while(1) {
+//        char input[MAX_DATA];
+//        fgets(input, MAX_DATA, stdin);
+//        if(strstr(input, "quit")) {
+//            break;
+//        }
+
         // waiting for PI connection from client. accept takes an empty client structure and when new client connects, this
         // is filled with the information from that client
         // returns new socket descriptor, used to send/receive data from this client
@@ -80,40 +85,38 @@ int main(int argc, char *argv[]) {
             perror("accept client PI");
             exit(-1);
         }
+
+        printf("client PI accepted\n");
         //waiting for DTP connection from client
         if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
             perror("accept client DTP");
             exit(-1);
         }
+        printf("client DTP accepted\n");
 
         // ntohs = network byte order to host byte order
         // inet_ntoa = network to ascii representation of IP address
         printf("New client connected from port no. %d and IP %s\n", ntohs(client_PI.sin_port), inet_ntoa(client_PI.sin_addr));
 
         data_len = 1;
-         // loop for while client is connected to the server port
+        // loop while client is connected to the server port
         while(data_len) {
             // wait for data from the client
             data_len = recv(client_sock_PI, data, MAX_DATA, 0);
-            if(data_len) {
-                char* quit = strstr(data, "quit");
-                // check if the user has terminated the client-side of the program
-                if(quit) {
-                    break;
-                }
-                send(client_sock_DTP, data, data_len, 0);
-                data[data_len] = '\0';
-                printf("Sent mesg: %s", data);
+            char* quit = strstr(data, "quit");
+            // check if the user has terminated the client-side of the program
+            if(quit) {
+                break;
             }
+            send(client_sock_DTP, data, data_len, 0);
+            data[data_len] = '\0';
+            printf("Sent mesg: %s", data);
+
         }
         printf("Client disconnected.\n");
         shutdown(client_sock_PI, SHUT_RDWR);
         shutdown(client_sock_DTP, SHUT_RDWR);
     }
-
-    printf("Program termination.\n");
-    shutdown(sock_PI, SHUT_RDWR);
-    shutdown(sock_DTP, SHUT_RDWR);
 
 }
 

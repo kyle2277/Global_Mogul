@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     bzero(&remote_server_PI.sin_zero, 8);
     //initialize remote server DTP values
     remote_server_DTP.sin_family = AF_INET;
-    remote_server_DTP.sin_port = htons(atoi(argv[2]-1));
+    remote_server_DTP.sin_port = htons(atoi(argv[2])-1);
     remote_server_DTP.sin_addr.s_addr = inet_addr(argv[1]);
     bzero(&remote_server_DTP.sin_zero, 8);
 
@@ -47,11 +47,13 @@ int main(int argc, char *argv[]) {
         perror("connect to server PI port");
         exit(-1);
     }
+    printf("connected PI\n");
     //connect to server DTP port
     if((connect(sock_DTP, (struct sockaddr*)&remote_server_DTP, sockaddr_len)) == ERROR) {
         perror("connect to server DTP port");
         exit(-1);
     }
+    printf("connected DTP\n");
 
     while(true) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
