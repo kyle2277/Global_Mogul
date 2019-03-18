@@ -105,7 +105,9 @@ void connect_DTP() {
 }
 
 void get_auth() {
-    while (!*access_path | !*pass) {
+    access_path[0] = '\0';
+    pass[0] = '\0';
+    while ((!*access_path | access_path[0] == '\0') | (!*pass | pass[0] == '\0')) {
         char usr_input[MAX_DATA];
         int auth_len;
         auth_len = recv(client_sock_PI, usr_input, MAX_DATA, 0);
@@ -123,7 +125,7 @@ void get_auth() {
                 token_count++;
                 token = strtok(NULL, delim);
                 if (token_count > max_args) {
-                    send(client_sock_PI, "Too many args.", MAX_DATA, 0);
+                    send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
                     skip = true;
                     break;
                 }
@@ -133,7 +135,7 @@ void get_auth() {
             }
             if(!skip) {
                 if (token_count < max_args) {
-                    send(client_sock_PI, "Too few args.", MAX_DATA, 0);
+                    send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
                     get_auth();
                 }
                 strncpy(access_path, args[0], strlen(args[0]));
@@ -141,16 +143,23 @@ void get_auth() {
                 printf("%s, ", access_path);
                 printf("%s", pass);
             }
-
         }
     }
     // 230: user logged in, proceed
-    send(client_sock_PI, "230", MAX_DATA, 0);
+    send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
 }
 
 void clear_auth() {
     // iterate through credential strings in memory and set all to null
-    NULL;
+    int access_path_len = strlen(access_path);
+    int pass_len = strlen(pass);
+    for(int i = 0; i < access_path_len; i++) {
+        access_path[i] = '\0';
+    }
+    for(int j = 0; j < pass_len; j++) {
+        pass[j] = '\0';
+    }
+    printf("Credentials cleared.\n");
 }
 
 void echo_loop() {
@@ -191,7 +200,7 @@ int main(int argc, char *argv[]) {
         printf("Listening.\n");
         echo_loop();
         printf("Client disconnected.\n");
-        //clear_auth();
+        clear_auth();
         shutdown(client_sock_PI, SHUT_RDWR);
         shutdown(client_sock_DTP, SHUT_RDWR);
 
