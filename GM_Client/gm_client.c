@@ -61,7 +61,7 @@ void connect_DTP() {
 }
 
 void send_auth() {
-    printf("Authorization required.\n");
+    printf("[332] Authorization required.\n");
     fgets(input, BUFFER, stdin);
     char* quit = strstr(input, "quit");
     send(sock_PI, input, strlen(input), 0);
@@ -102,8 +102,8 @@ void comm_loop() {
 int main(int argc, char *argv[]) {
     init_sockets(argv);
     connect_PI();
-    connect_DTP();
     send_auth();
+    connect_DTP();
     printf("Ready.\n");
     comm_loop();
     return 0;

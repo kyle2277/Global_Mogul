@@ -104,51 +104,6 @@ void connect_DTP() {
     printf("client DTP accepted\n");
 }
 
-void get_auth() {
-    access_path[0] = '\0';
-    pass[0] = '\0';
-    while ((!*access_path | access_path[0] == '\0') | (!*pass | pass[0] == '\0')) {
-        char usr_input[MAX_DATA];
-        int auth_len;
-        auth_len = recv(client_sock_PI, usr_input, MAX_DATA, 0);
-        // if anything is received form the client, proceed with authorization
-        if (auth_len) {
-            usr_input[auth_len] = '\0';
-            bool skip = false;
-            int max_args = 2;
-            char *delim = " ";
-            char *token = strtok(usr_input, delim);
-            char *args[max_args];
-            int token_count = 0;
-            args[token_count] = token;
-            while (token != NULL) {
-                token_count++;
-                token = strtok(NULL, delim);
-                if (token_count > max_args) {
-                    send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
-                    skip = true;
-                    break;
-                }
-                if (token != NULL) {
-                    args[token_count] = token;
-                }
-            }
-            if(!skip) {
-                if (token_count < max_args) {
-                    send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
-                    get_auth();
-                }
-                strncpy(access_path, args[0], strlen(args[0]));
-                strncpy(pass, args[1], strlen(args[1]));
-                printf("%s, ", access_path);
-                printf("%s", pass);
-            }
-        }
-    }
-    // 230: user logged in, proceed
-    send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
-}
-
 void clear_auth() {
     // iterate through credential strings in memory and set all to null
     int access_path_len = strlen(access_path);
@@ -160,6 +115,73 @@ void clear_auth() {
         pass[j] = '\0';
     }
     printf("Credentials cleared.\n");
+}
+
+int submit_auth(char* args[]) {
+    if(strstr(args[0], "USER")) {
+        strncpy(access_path, args[1], strlen(args[1]));
+        printf("%s", access_path);
+        if(access_path[0] != '\0' && pass[0] != '\0') {
+            // 230: user logged in, proceed
+            send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+        } else {
+            send(client_sock_PI, "[330] User name okay, need password", MAX_DATA, 0);
+        }
+    } else if(strstr(args[0], "PASS")) {
+        strncpy(pass, args[1], strlen(args[1]));
+        printf("%s", pass);
+        if(access_path[0] != '\0' && pass[0] != '\0') {
+            // 230: user logged in, proceed
+            send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+        } else {
+            send(client_sock_PI, "Password received", MAX_DATA, 0);
+        }
+
+    } else {
+        send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);
+    }
+    return 1;
+}
+
+void get_auth() {
+    do {
+        int max_args = 2;
+        char *delim = " ";
+        char *args[max_args];
+        char usr_input[MAX_DATA];
+        int auth_len;
+        bool skip = false;
+        auth_len = recv(client_sock_PI, usr_input, MAX_DATA, 0);
+        // if anything is received form the client, proceed with authorization
+        if (auth_len) {
+            usr_input[auth_len] = '\0';
+            char *token = strtok(usr_input, delim);
+            int token_count = 0;
+            args[token_count] = token;
+            while (token != NULL) {
+                token_count++;
+                token = strtok(NULL, delim);
+                if (token_count > max_args) {
+                    send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
+                    clear_auth();
+                    skip = true;
+                    break;
+                }
+                if (token != NULL) {
+                    args[token_count] = token;
+                }
+            }
+            if(!skip) {
+                if (token_count < max_args) {
+                    send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
+                    clear_auth();
+                    get_auth();
+                } else {
+                    submit_auth(args);
+                }
+            }
+        }
+    } while (access_path[0] == '\0' || pass[0] == '\0');
 }
 
 void echo_loop() {
@@ -178,8 +200,6 @@ void echo_loop() {
             data[data_len] = '\0';
             printf("Sent mesg: %s", data);
         }
-
-
     }
 }
 
@@ -189,21 +209,15 @@ int main(int argc, char *argv[]) {
     listen_DTP();
 
     while(true) {
-//        char input[MAX_DATA];
-//        fgets(input, MAX_DATA, stdin);
-//        if(strstr(input, "quit")) {
-//            break;
-//        }
         connect_PI();
-        connect_DTP();
         get_auth();
+        connect_DTP();
         printf("Listening.\n");
         echo_loop();
         printf("Client disconnected.\n");
         clear_auth();
         shutdown(client_sock_PI, SHUT_RDWR);
         shutdown(client_sock_DTP, SHUT_RDWR);
-
     }
 
 }
