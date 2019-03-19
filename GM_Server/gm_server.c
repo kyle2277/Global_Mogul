@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 
 // pre-processor definitions
 #define ERROR -1
@@ -116,17 +117,21 @@ void connect_DTP() {
 /*
  * Replaces all characters in current credentials with the null string character. Prepares system for new user
  */
-void clear_auth() {
-    // iterate through credential strings in memory and set all to null
-    int access_path_len = strlen(access_path);
-    int pass_len = strlen(pass);
-    for(int i = 0; i < access_path_len; i++) {
-        access_path[i] = '\0';
-    }
-    for(int j = 0; j < pass_len; j++) {
-        pass[j] = '\0';
-    }
-    printf("Credentials cleared.\n");
+void clean(char type[], char cred[]) {
+    int len = strlen(cred);
+    for(int i = 0; i < len; i++) { cred[i] = '\0'; }
+    printf("%s cleared.\n", type);
+}
+
+/*
+ * Check if user directory exists
+ */
+bool is_valid_user(char args[]) {
+    bool valid = false;
+    DIR* directory = opendir(args);
+    if(ENOENT != errno) { valid = true; }
+    closedir(directory);
+    return valid;
 }
 
 /*
@@ -134,24 +139,32 @@ void clear_auth() {
  */
 void submit_auth(char* args[]) {
     if(strstr(args[0], "USER")) {
-        strncpy(access_path, args[1], strlen(args[1]));
-        printf("%s", access_path);
-        if(access_path[0] != '\0' && pass[0] != '\0') {
-            // 230: user logged in, proceed
-            send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+        if(access_path[0] != '\0') { clean("Username", access_path); }
+        if(is_valid_user(args[1])) {
+            strncpy(access_path, args[1], strlen(args[1]));
+            printf("%s\n", access_path);
+            if(access_path[0] != '\0' && pass[0] != '\0') {
+                // 230: user logged in, proceed
+                send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+            } else {
+                send(client_sock_PI, "[330] User name okay, need password", MAX_DATA, 0);
+            }
         } else {
-            send(client_sock_PI, "[330] User name okay, need password", MAX_DATA, 0);
+            char reply[MAX_DATA];
+            sprintf(reply, "[530] User %s does not exist", args[1]);
+            send(client_sock_PI, reply, MAX_DATA, 0);
+            clean("Username", access_path);
         }
     } else if(strstr(args[0], "PASS")) {
+        if(pass[0] != '\0') { clean("Password", pass); }
         strncpy(pass, args[1], strlen(args[1]));
-        printf("%s", pass);
+        printf("%s\n", pass);
         if(access_path[0] != '\0' && pass[0] != '\0') {
             // 230: user logged in, proceed
             send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
         } else {
             send(client_sock_PI, "Password received", MAX_DATA, 0);
         }
-
     } else {
         send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);
     }
@@ -180,18 +193,21 @@ void get_auth() {
                 token = strtok(NULL, delim);
                 if (token_count > max_args) {
                     send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
-                    clear_auth();
+                    clean("Username", access_path);
+                    clean("Password", pass);
                     skip = true;
                     break;
                 }
                 if (token != NULL) {
+                    token[(int)strlen(token)-1] = '\0';
                     args[token_count] = token;
                 }
             }
             if(!skip) {
                 if (token_count < max_args) {
                     send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
-                    clear_auth();
+                    clean("Username", access_path);
+                    clean("Password", pass);
                     get_auth();
                 } else {
                     submit_auth(args);
@@ -213,9 +229,7 @@ void echo_loop() {
         if(data_len) {
             char* quit = strstr(data, "quit");
             // check if the user has terminated the client-side of the program
-            if(quit) {
-                break;
-            }
+            if(quit) { break; }
             send(client_sock_DTP, data, data_len, 0);
             data[data_len] = '\0';
             printf("Sent mesg: %s", data);
@@ -235,7 +249,8 @@ int main(int argc, char *argv[]) {
         printf("Listening.\n");
         echo_loop();
         printf("Client disconnected.\n");
-        clear_auth();
+        clean("Username", access_path);
+        clean("Password", pass);
         shutdown(client_sock_PI, SHUT_RDWR);
         shutdown(client_sock_DTP, SHUT_RDWR);
     }
