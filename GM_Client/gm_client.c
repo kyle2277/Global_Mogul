@@ -20,6 +20,9 @@ char output[BUFFER]; // stores remote_server response
 int sockaddr_len = sizeof(struct sockaddr_in);
 int len;
 
+/*
+ * Initialize all socket descriptors and structures
+ */
 void init_sockets(char* argv[]) {
     if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client PI socket");
@@ -42,8 +45,10 @@ void init_sockets(char* argv[]) {
     bzero(&remote_server_DTP.sin_zero, 8);
 }
 
+/*
+ * Connect to server PI port
+ */
 void connect_PI() {
-    //connect to server PI port
     if((connect(sock_PI, (struct sockaddr *)&remote_server_PI, sockaddr_len)) == ERROR) {
         perror("connect to server PI port");
         exit(-1);
@@ -51,8 +56,10 @@ void connect_PI() {
     printf("connected PI\n");
 }
 
+/*
+ * Connect to server DTP port
+ */
 void connect_DTP() {
-    //connect to server DTP port
     if((connect(sock_DTP, (struct sockaddr*)&remote_server_DTP, sockaddr_len)) == ERROR) {
         perror("connect to server DTP port");
         exit(-1);
@@ -60,6 +67,9 @@ void connect_DTP() {
     printf("connected DTP\n");
 }
 
+/*
+ * Accepts user credentials from console and sends to server via PI connection
+ */
 void send_auth() {
     printf("[332] Authorization required.\n");
     fgets(input, BUFFER, stdin);
@@ -94,7 +104,6 @@ void comm_loop() {
         output[len] = '\0';
         printf("%s", output);
     }
-
     shutdown(sock_PI, SHUT_RDWR);
     shutdown(sock_DTP, SHUT_RDWR);
 }
@@ -107,7 +116,6 @@ int main(int argc, char *argv[]) {
     printf("Ready.\n");
     comm_loop();
     return 0;
-
 }
 
 /* FTP notes

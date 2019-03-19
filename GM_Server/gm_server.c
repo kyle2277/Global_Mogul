@@ -28,6 +28,9 @@ char data[MAX_DATA];
 char access_path[MAX_STR_LEN];
 char pass[MAX_STR_LEN];
 
+/*
+ * Initialization of all socket descriptors and structures
+ */
 void init_sockets(char *argv[]) {
     // create PI and DTP sockets for server
     if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
@@ -45,7 +48,6 @@ void init_sockets(char *argv[]) {
     server_PI.sin_port = htons(atoi(argv[1])); // atoi = ascii to integer
     server_PI.sin_addr.s_addr = INADDR_ANY; // listen on all interfaces on host at specified port sin_port
     bzero(&server_PI.sin_zero, 8);
-
     //initialize values in server_DTP socket
     server_DTP.sin_family = AF_INET;
     server_DTP.sin_port = htons(atoi(argv[1])-1);
@@ -65,26 +67,31 @@ void init_sockets(char *argv[]) {
     }
 }
 
+/*
+ * Instructs kernel to listen on server PI socket
+ */
 void listen_PI() {
-    // instruct kernel to listen on PI socket
     if((listen(sock_PI, MAX_CLIENTS)) == ERROR) {
         perror("listen_PI");
         exit(-1);
     }
 }
 
+/*
+ * Instructs kernel to listen on server DTP socket
+ */
 void listen_DTP() {
-    //instructs kernel to listen on DTP socket
     if((listen(sock_DTP, MAX_CLIENTS)) == ERROR) {
         perror("listen DTP");
         exit(-1);
     }
 }
 
+/*
+ * Waiting for PI connection from client. Takes empty client structure, fills it with client info once connected
+ * accept() returns new socket descriptor, used to send/receive data from this client
+ */
 void connect_PI() {
-    // waiting for PI connection from client. accept takes an empty client structure and when new client connects, this
-    // is filled with the information from that client
-    // returns new socket descriptor, used to send/receive data from this client
     if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == ERROR) {
         perror("accept client PI");
         exit(-1);
@@ -95,8 +102,10 @@ void connect_PI() {
     printf("New client connected from port no. %d and IP %s\n", ntohs(client_PI.sin_port), inet_ntoa(client_PI.sin_addr));
 }
 
+/*
+ * Waiting for DTP connection from client
+ */
 void connect_DTP() {
-    //waiting for DTP connection from client
     if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
         perror("accept client DTP");
         exit(-1);
@@ -104,6 +113,9 @@ void connect_DTP() {
     printf("client DTP accepted\n");
 }
 
+/*
+ * Replaces all characters in current credentials with the null string character. Prepares system for new user
+ */
 void clear_auth() {
     // iterate through credential strings in memory and set all to null
     int access_path_len = strlen(access_path);
@@ -117,7 +129,10 @@ void clear_auth() {
     printf("Credentials cleared.\n");
 }
 
-int submit_auth(char* args[]) {
+/*
+ * Stores username and password from client input
+ */
+void submit_auth(char* args[]) {
     if(strstr(args[0], "USER")) {
         strncpy(access_path, args[1], strlen(args[1]));
         printf("%s", access_path);
@@ -140,9 +155,11 @@ int submit_auth(char* args[]) {
     } else {
         send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);
     }
-    return 1;
 }
 
+/*
+ * Facilitates authorization of a newly connected user. Username and password required
+ */
 void get_auth() {
     do {
         int max_args = 2;
@@ -184,6 +201,9 @@ void get_auth() {
     } while (access_path[0] == '\0' || pass[0] == '\0');
 }
 
+/*
+ * receives data from client on PI channel and echoes data back on DTP channel.
+ */
 void echo_loop() {
     data_len = 1;
     // loop while client is connected to the server port and authorized
@@ -219,7 +239,6 @@ int main(int argc, char *argv[]) {
         shutdown(client_sock_PI, SHUT_RDWR);
         shutdown(client_sock_DTP, SHUT_RDWR);
     }
-
 }
 
 /* POINTERS
