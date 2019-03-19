@@ -7,32 +7,17 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include "authorize.h"
 
 // pre-processor definitions
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
-#define MAX_STR_LEN 80
-
-typedef enum { false, true } bool;
-struct sockaddr_in server_PI;
-struct sockaddr_in server_DTP;
-struct sockaddr_in client_PI;
-struct sockaddr_in client_DTP;
-int sock_PI; // reference to the server's Protocol Interpreter (PI) socket which talks to the client
-int sock_DTP; // reference to the server's Data Transfer Process (DTP) socket which exchanges data with the client
-int client_sock_PI; // reference to connected client PI socket
-int client_sock_DTP; // reference to connected client DTP socket
-int sockaddr_len = sizeof(struct sockaddr_in);
-int data_len;
-char data[MAX_DATA];
-char access_path[MAX_STR_LEN];
-char pass[MAX_STR_LEN];
 
 /*
  * Initialization of all socket descriptors and structures
  */
-void init_sockets(char *argv[]) {
+void init_sockets(char *argv[], int sockaddr_len, struct sockaddr_in server_PI, struct sockaddr_in server_DTP) {
     // create PI and DTP sockets for server
     if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server PI socket");
@@ -92,7 +77,7 @@ void listen_DTP() {
  * Waiting for PI connection from client. Takes empty client structure, fills it with client info once connected
  * accept() returns new socket descriptor, used to send/receive data from this client
  */
-void connect_PI() {
+void connect_PI(int sockaddr_len, struct sockaddr_in client_PI) {
     if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == ERROR) {
         perror("accept client PI");
         exit(-1);
@@ -106,7 +91,7 @@ void connect_PI() {
 /*
  * Waiting for DTP connection from client
  */
-void connect_DTP() {
+void connect_DTP(int sockaddr_len, struct sockaddr_in client_DTP) {
     if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
         perror("accept client DTP");
         exit(-1);
@@ -115,113 +100,11 @@ void connect_DTP() {
 }
 
 /*
- * Replaces all characters in current credentials with the null string character. Prepares system for new user
- */
-void clean(char type[], char cred[]) {
-    int len = strlen(cred);
-    for(int i = 0; i < len; i++) { cred[i] = '\0'; }
-    printf("%s cleared.\n", type);
-}
-
-/*
- * Check if user directory exists
- */
-bool is_valid_user(char args[]) {
-    bool valid = false;
-    DIR* directory = opendir(args);
-    if(ENOENT != errno) { valid = true; }
-    closedir(directory);
-    return valid;
-}
-
-/*
- * Stores username and password from client input
- */
-void submit_auth(char* args[]) {
-    if(strstr(args[0], "USER")) {
-        if(access_path[0] != '\0') { clean("Username", access_path); }
-        if(is_valid_user(args[1])) {
-            strncpy(access_path, args[1], strlen(args[1]));
-            printf("%s\n", access_path);
-            if(access_path[0] != '\0' && pass[0] != '\0') {
-                // 230: user logged in, proceed
-                send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
-            } else {
-                send(client_sock_PI, "[330] User name okay, need password", MAX_DATA, 0);
-            }
-        } else {
-            char reply[MAX_DATA];
-            sprintf(reply, "[530] User %s does not exist", args[1]);
-            send(client_sock_PI, reply, MAX_DATA, 0);
-            clean("Username", access_path);
-        }
-    } else if(strstr(args[0], "PASS")) {
-        if(pass[0] != '\0') { clean("Password", pass); }
-        strncpy(pass, args[1], strlen(args[1]));
-        printf("%s\n", pass);
-        if(access_path[0] != '\0' && pass[0] != '\0') {
-            // 230: user logged in, proceed
-            send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
-        } else {
-            send(client_sock_PI, "Password received", MAX_DATA, 0);
-        }
-    } else {
-        send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);
-    }
-}
-
-/*
- * Facilitates authorization of a newly connected user. Username and password required
- */
-void get_auth() {
-    do {
-        int max_args = 2;
-        char *delim = " ";
-        char *args[max_args];
-        char usr_input[MAX_DATA];
-        int auth_len;
-        bool skip = false;
-        auth_len = recv(client_sock_PI, usr_input, MAX_DATA, 0);
-        // if anything is received form the client, proceed with authorization
-        if (auth_len) {
-            usr_input[auth_len] = '\0';
-            char *token = strtok(usr_input, delim);
-            int token_count = 0;
-            args[token_count] = token;
-            while (token != NULL) {
-                token_count++;
-                token = strtok(NULL, delim);
-                if (token_count > max_args) {
-                    send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
-                    clean("Username", access_path);
-                    clean("Password", pass);
-                    skip = true;
-                    break;
-                }
-                if (token != NULL) {
-                    token[(int)strlen(token)-1] = '\0';
-                    args[token_count] = token;
-                }
-            }
-            if(!skip) {
-                if (token_count < max_args) {
-                    send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
-                    clean("Username", access_path);
-                    clean("Password", pass);
-                    get_auth();
-                } else {
-                    submit_auth(args);
-                }
-            }
-        }
-    } while (access_path[0] == '\0' || pass[0] == '\0');
-}
-
-/*
  * receives data from client on PI channel and echoes data back on DTP channel.
  */
 void echo_loop() {
-    data_len = 1;
+    char data[MAX_DATA];
+    int data_len = 1;
     // loop while client is connected to the server port and authorized
     while(data_len) {
         // wait for data from the client
@@ -238,14 +121,20 @@ void echo_loop() {
 }
 
 int main(int argc, char *argv[]) {
-    init_sockets(argv);
-    listen_PI();
-    listen_DTP();
+    struct sockaddr_in server_PI;
+    struct sockaddr_in server_DTP;
+    struct sockaddr_in client_PI;
+    struct sockaddr_in client_DTP;
+    int sockaddr_len = sizeof(struct sockaddr_in);
+
+    init_sockets(argv, sockaddr_len, server_PI, server_DTP);
+    listen_PI(sockaddr_len);
+    listen_DTP(sockaddr_len);
 
     while(true) {
-        connect_PI();
+        connect_PI(sockaddr_len, client_PI);
         get_auth();
-        connect_DTP();
+        connect_DTP(sockaddr_len, client_DTP);
         printf("Listening.\n");
         echo_loop();
         printf("Client disconnected.\n");
