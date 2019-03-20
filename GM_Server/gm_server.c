@@ -111,11 +111,18 @@ void echo_loop() {
         // wait for data from the client
         data_len = recv(client_sock_PI, data, MAX_DATA, 0);
         if(data_len) {
-            char* quit = strstr(data, "quit");
-            // check if the user has terminated the client-side of the program
-            if(quit) { break; }
-            send(client_sock_DTP, data, data_len, 0);
             data[data_len] = '\0';
+            char* quit = strstr(data, "QUIT");
+            // check if the user has terminated the client-side of the program
+            if(quit) {
+                printf("Client disconnected.\n");
+                clean("Username", access_path);
+                clean("Password", pass);
+                shutdown(client_sock_PI, SHUT_RDWR);
+                shutdown(client_sock_DTP, SHUT_RDWR);
+                break;
+            }
+            send(client_sock_DTP, data, data_len, 0);
             printf("Sent mesg: %s", data);
         }
     }
@@ -143,11 +150,6 @@ int main(int argc, char *argv[]) {
         printf("Listening.\n");
 //        command_loop();
         echo_loop();
-        printf("Client disconnected.\n");
-        clean("Username", access_path);
-        clean("Password", pass);
-        shutdown(client_sock_PI, SHUT_RDWR);
-        shutdown(client_sock_DTP, SHUT_RDWR);
     }
 }
 

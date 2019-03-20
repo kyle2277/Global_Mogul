@@ -45,7 +45,7 @@ void submit_auth(char* args[]) {
                 // 230: user logged in, proceed
                 send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
             } else {
-                send(client_sock_PI, "[330] User name okay, need password", MAX_DATA, 0);
+                send(client_sock_PI, "[331] Username okay, need password", MAX_DATA, 0);
             }
         } else {
             char reply[MAX_DATA];
@@ -61,7 +61,7 @@ void submit_auth(char* args[]) {
             // 230: user logged in, proceed
             send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
         } else {
-            send(client_sock_PI, "Password received", MAX_DATA, 0);
+            send(client_sock_PI, "[333] Password okay, need username", MAX_DATA, 0);
         }
     } else {
         send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);

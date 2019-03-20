@@ -17,6 +17,7 @@ struct sockaddr_in remote_server_PI;
 struct sockaddr_in remote_server_DTP;
 int sock_PI; // socket descriptor for the client Process Interpreter (PI) socket
 int sock_DTP; // socket descriptor for the client Data Transfer Process (STP) socket
+char pass[BUFFER];
 
 /*
  * Initialize all socket descriptors and structures
@@ -65,24 +66,40 @@ void connect_DTP(int sockaddr_len) {
     printf("connected DTP\n");
 }
 
+void clean_pass() {
+    int len = strlen(pass);
+    for(int i = 0; i < len; i++) { pass[i] = '\0'; }
+    printf("Password cleared.\n");
+}
+
+/*
+ * Sets password for decryption purposes
+ */
+void set_pass(char input[]) {
+    char *delim = " ";
+    input[strlen(input)] = '\0';
+    strtok(input, delim);
+    char *token = strtok(NULL, delim);
+    token[(int)strlen(token)-1] = '\0';
+    strncpy(pass, token, strlen(token));
+}
+
 /*
  * Accepts user credentials from console and sends to server via PI connection
  */
 void send_auth() {
     char input[BUFFER]; // stores user input
+    char auth_reply[BUFFER]; // stores server response
     printf("[332] Authorization required.\n");
     fgets(input, BUFFER, stdin);
-    char* quit = strstr(input, "quit");
     send(sock_PI, input, strlen(input), 0);
     int reply_len;
-    char auth_reply[BUFFER];
     reply_len = recv(sock_PI, auth_reply, BUFFER, 0);
     if (reply_len) {
         auth_reply[reply_len] = '\0';
+        if(strstr(input, "PASS") && (strstr(auth_reply, "333") || strstr(auth_reply, "230"))) { set_pass(input); }
         printf("%s\n", auth_reply);
-        if(!strstr(auth_reply, "230")) {
-            send_auth();
-        }
+        if(!strstr(auth_reply, "230")) { send_auth(); }
     } else {
         send_auth();
     }
@@ -96,7 +113,7 @@ void comm_loop() {
     while(true) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
-        char* quit = strstr(input, "quit");
+        char* quit = strstr(input, "QUIT");
         send(sock_PI, input, strlen(input), 0);
         // check if the user wants to terminate the program
         if(quit) {
@@ -107,9 +124,14 @@ void comm_loop() {
         output[reply_len] = '\0';
         printf("%s", output);
     }
+    clean_pass();
     shutdown(sock_PI, SHUT_RDWR);
     shutdown(sock_DTP, SHUT_RDWR);
 }
+
+//void dispatch(char input[]) {
+//    if(strstr(input, ""))
+//}
 
 void command_loop() {
     char input[BUFFER];
@@ -119,7 +141,7 @@ void command_loop() {
     while(run) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
-        char* quit = strstr(input, "quit");
+        char* quit = strstr(input, "QUIT");
         send(sock_PI, input, strlen(input), 0);
         // check if the user wants to terminate the program
         if(quit) {
@@ -129,7 +151,7 @@ void command_loop() {
         response_len = recv(sock_DTP, response, BUFFER, 0);
         response[response_len] = '\0';
         printf("%s", response);
-
+//        dispatch(input);
     }
     shutdown(sock_PI, SHUT_RDWR);
     shutdown(sock_DTP, SHUT_RDWR);
