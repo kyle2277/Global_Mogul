@@ -10,15 +10,13 @@
 #define ERROR -1
 #define BUFFER 1024
 
+//todo clean up global variables
+
 typedef enum { false, true } bool;
 struct sockaddr_in remote_server_PI;
 struct sockaddr_in remote_server_DTP;
 int sock_PI; // socket descriptor for the client Process Interpreter (PI) socket
 int sock_DTP; // socket descriptor for the client Data Transfer Process (STP) socket
-char input[BUFFER]; // stores user input
-char output[BUFFER]; // stores remote_server response
-int sockaddr_len = sizeof(struct sockaddr_in);
-int len;
 
 /*
  * Initialize all socket descriptors and structures
@@ -48,7 +46,7 @@ void init_sockets(char* argv[]) {
 /*
  * Connect to server PI port
  */
-void connect_PI() {
+void connect_PI(int sockaddr_len) {
     if((connect(sock_PI, (struct sockaddr *)&remote_server_PI, sockaddr_len)) == ERROR) {
         perror("connect to server PI port");
         exit(-1);
@@ -59,7 +57,7 @@ void connect_PI() {
 /*
  * Connect to server DTP port
  */
-void connect_DTP() {
+void connect_DTP(int sockaddr_len) {
     if((connect(sock_DTP, (struct sockaddr*)&remote_server_DTP, sockaddr_len)) == ERROR) {
         perror("connect to server DTP port");
         exit(-1);
@@ -71,6 +69,7 @@ void connect_DTP() {
  * Accepts user credentials from console and sends to server via PI connection
  */
 void send_auth() {
+    char input[BUFFER]; // stores user input
     printf("[332] Authorization required.\n");
     fgets(input, BUFFER, stdin);
     char* quit = strstr(input, "quit");
@@ -89,7 +88,11 @@ void send_auth() {
     }
 }
 
+/* DEPRECATED */
 void comm_loop() {
+    int reply_len;
+    char input[BUFFER]; // stores user input
+    char output[BUFFER]; // stores remote_server response
     while(true) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
@@ -100,20 +103,46 @@ void comm_loop() {
             printf("Connection terminated.\n");
             break;
         }
-        len = recv(sock_DTP, output, BUFFER, 0);
-        output[len] = '\0';
+        reply_len = recv(sock_DTP, output, BUFFER, 0);
+        output[reply_len] = '\0';
         printf("%s", output);
     }
     shutdown(sock_PI, SHUT_RDWR);
     shutdown(sock_DTP, SHUT_RDWR);
 }
 
+void command_loop() {
+    char input[BUFFER];
+    char response[BUFFER];
+    int response_len;
+    bool run = true;
+    while(run) {
+        // fgets() reads input (containing spaces) from user, stores in provided string (input)
+        fgets(input, BUFFER, stdin);
+        char* quit = strstr(input, "quit");
+        send(sock_PI, input, strlen(input), 0);
+        // check if the user wants to terminate the program
+        if(quit) {
+            printf("Connection terminated.\n");
+            break;
+        }
+        response_len = recv(sock_DTP, response, BUFFER, 0);
+        response[response_len] = '\0';
+        printf("%s", response);
+
+    }
+    shutdown(sock_PI, SHUT_RDWR);
+    shutdown(sock_DTP, SHUT_RDWR);
+}
+
 int main(int argc, char *argv[]) {
+    int sockaddr_len = sizeof(struct sockaddr_in);
     init_sockets(argv);
-    connect_PI();
+    connect_PI(sockaddr_len);
     send_auth();
-    connect_DTP();
+    connect_DTP(sockaddr_len);
     printf("Ready.\n");
+//    command_loop();
     comm_loop();
     return 0;
 }

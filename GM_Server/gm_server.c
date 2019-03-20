@@ -101,6 +101,7 @@ void connect_DTP(int sockaddr_len, struct sockaddr_in client_DTP) {
 
 /*
  * receives data from client on PI channel and echoes data back on DTP channel.
+ * DEPRECATED
  */
 void echo_loop() {
     char data[MAX_DATA];
@@ -120,6 +121,10 @@ void echo_loop() {
     }
 }
 
+void command_loop() {
+    NULL;
+}
+
 int main(int argc, char *argv[]) {
     struct sockaddr_in server_PI;
     struct sockaddr_in server_DTP;
@@ -136,6 +141,7 @@ int main(int argc, char *argv[]) {
         get_auth();
         connect_DTP(sockaddr_len, client_DTP);
         printf("Listening.\n");
+//        command_loop();
         echo_loop();
         printf("Client disconnected.\n");
         clean("Username", access_path);
