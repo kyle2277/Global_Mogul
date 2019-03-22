@@ -106,11 +106,12 @@ void send_auth() {
 }
 
 /* DEPRECATED */
-void comm_loop() {
+void echo_loop() {
     int reply_len;
     char input[BUFFER]; // stores user input
     char output[BUFFER]; // stores remote_server response
-    while(true) {
+    bool run = true;
+    while(run) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
         char* quit = strstr(input, "QUIT");
@@ -118,22 +119,25 @@ void comm_loop() {
         // check if the user wants to terminate the program
         if(quit) {
             printf("Connection terminated.\n");
-            break;
+            run = false;
         }
         reply_len = recv(sock_DTP, output, BUFFER, 0);
         output[reply_len] = '\0';
         printf("%s", output);
     }
-    clean_pass();
-    shutdown(sock_PI, SHUT_RDWR);
-    shutdown(sock_DTP, SHUT_RDWR);
 }
 
-//void dispatch(char input[]) {
-//    if(strstr(input, ""))
-//}
+bool dispatch(char input[]) {
+    if(strstr(input, "ECHO")) {
+        echo_loop();
+        return true;
+    } else if(strstr(input, "QUIT")) {
+        return false;
+    }
+}
 
 void command_loop() {
+    printf("Ready.\n");
     char input[BUFFER];
     char response[BUFFER];
     int response_len;
@@ -146,13 +150,14 @@ void command_loop() {
         // check if the user wants to terminate the program
         if(quit) {
             printf("Connection terminated.\n");
-            break;
+            run = false;
         }
         response_len = recv(sock_DTP, response, BUFFER, 0);
         response[response_len] = '\0';
         printf("%s", response);
-//        dispatch(input);
+        run = dispatch(input);
     }
+    clean_pass();
     shutdown(sock_PI, SHUT_RDWR);
     shutdown(sock_DTP, SHUT_RDWR);
 }
@@ -163,9 +168,7 @@ int main(int argc, char *argv[]) {
     connect_PI(sockaddr_len);
     send_auth();
     connect_DTP(sockaddr_len);
-    printf("Ready.\n");
-//    command_loop();
-    comm_loop();
+    command_loop();
     return 0;
 }
 

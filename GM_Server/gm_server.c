@@ -128,6 +128,7 @@ void echo_loop() {
     }
 }
 
+//todo write cases for specific commands
 void command_loop() {
     NULL;
 }
