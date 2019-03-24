@@ -118,7 +118,6 @@ void echo_loop() {
         send(sock_PI, input, strlen(input), 0);
         // check if the user wants to terminate the program
         if(quit) {
-            printf("Connection terminated.\n");
             run = false;
         }
         reply_len = recv(sock_DTP, output, BUFFER, 0);
@@ -152,9 +151,9 @@ void command_loop() {
             printf("Connection terminated.\n");
             run = false;
         }
-        response_len = recv(sock_DTP, response, BUFFER, 0);
+        response_len = recv(sock_PI, response, BUFFER, 0);
         response[response_len] = '\0';
-        printf("%s", response);
+        printf("%s\n", response);
         run = dispatch(input);
     }
     clean_pass();

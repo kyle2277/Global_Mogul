@@ -114,14 +114,7 @@ void echo_loop() {
             data[data_len] = '\0';
             char* quit = strstr(data, "QUIT");
             // check if the user has terminated the client-side of the program
-            if(quit) {
-                printf("Client disconnected.\n");
-                clean("Username", access_path);
-                clean("Password", pass);
-                shutdown(client_sock_PI, SHUT_RDWR);
-                shutdown(client_sock_DTP, SHUT_RDWR);
-                break;
-            }
+            if(quit) { break; }
             send(client_sock_DTP, data, data_len, 0);
             printf("Sent mesg: %s", data);
         }
@@ -130,7 +123,33 @@ void echo_loop() {
 
 //todo write cases for specific commands
 void command_loop() {
-    NULL;
+    printf("Waiting for client command.\n");
+    char data[MAX_DATA];
+    bool run = true;
+    int data_len;
+    while(run) {
+        data_len = recv(client_sock_PI, data, MAX_DATA, 0);
+        data[data_len] = '\0';
+        if(strstr(data, "QUIT")) {
+            printf("Client disconnected.\n");
+            clean("Username", access_path);
+            clean("Password", pass);
+            shutdown(client_sock_PI, SHUT_RDWR);
+            shutdown(client_sock_DTP, SHUT_RDWR);
+            run = false;
+        } else if(strstr(data, "ECHO")) {
+            char* response = "confirm ECHO";
+            printf("%s", response);
+            send(client_sock_PI, response, strlen(response) , 0);
+            echo_loop();
+        } else if(strstr(data, "NOOP")) {
+            char* response = "[200] command OK";
+            send(client_sock_PI, response, strlen(response), 0);
+        } else {
+            char* response = "[500] syntax error, command unrecognized";
+            send(client_sock_PI, response, strlen(response), 0);
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -141,16 +160,15 @@ int main(int argc, char *argv[]) {
     int sockaddr_len = sizeof(struct sockaddr_in);
 
     init_sockets(argv, sockaddr_len, server_PI, server_DTP);
-    listen_PI(sockaddr_len);
-    listen_DTP(sockaddr_len);
+    listen_PI();
+    listen_DTP();
 
     while(true) {
         connect_PI(sockaddr_len, client_PI);
         get_auth();
         connect_DTP(sockaddr_len, client_DTP);
-        printf("Listening.\n");
-//        command_loop();
-        echo_loop();
+//        printf("Listening.\n");
+        command_loop();
     }
 }
 

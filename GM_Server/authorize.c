@@ -43,14 +43,16 @@ void submit_auth(char* args[]) {
             printf("%s\n", access_path);
             if(access_path[0] != '\0' && pass[0] != '\0') {
                 // 230: user logged in, proceed
-                send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+                char* response = "[230] login successful";
+                send(client_sock_PI, response, strlen(response), 0);
             } else {
-                send(client_sock_PI, "[331] Username okay, need password", MAX_DATA, 0);
+                char* response = "[331] Username okay, need password";
+                send(client_sock_PI, response, strlen(response), 0);
             }
         } else {
-            char reply[MAX_DATA];
-            sprintf(reply, "[530] User %s does not exist", args[1]);
-            send(client_sock_PI, reply, MAX_DATA, 0);
+            char response[MAX_DATA];
+            sprintf(response, "[530] User %s does not exist", args[1]);
+            send(client_sock_PI, response, strlen(response), 0);
             clean("Username", access_path);
         }
     } else if(strstr(args[0], "PASS")) {
@@ -59,12 +61,15 @@ void submit_auth(char* args[]) {
         printf("%s\n", pass);
         if(access_path[0] != '\0' && pass[0] != '\0') {
             // 230: user logged in, proceed
-            send(client_sock_PI, "[230] login successful", MAX_DATA, 0);
+            char* response = "[230] login successful";
+            send(client_sock_PI, response, strlen(response), 0);
         } else {
-            send(client_sock_PI, "[333] Password okay, need username", MAX_DATA, 0);
+            char* response = "[333] Password okay, need username";
+            send(client_sock_PI, response, strlen(response), 0);
         }
     } else {
-        send(client_sock_PI, "[500] Syntax error", MAX_DATA, 0);
+        char* response = "[500] Syntax error";
+        send(client_sock_PI, response, strlen(response), 0);
     }
 }
 
