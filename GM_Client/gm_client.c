@@ -122,26 +122,55 @@ void echo_loop() {
         }
         reply_len = recv(sock_DTP, output, BUFFER, 0);
         output[reply_len] = '\0';
-        printf("%s", output);
+        printf("%s\n", output);
     }
+}
+
+void list(char* command) {
+    int reply_len;
+    char response[BUFFER]; // stores server response
+    // tell server what type of list to output
+    send(sock_DTP, command, strlen(command), 0);
+    reply_len = recv(sock_DTP, response, BUFFER, 0);
+    response[reply_len] = '\0';
+    printf("%s\n", response)
+    reply_len = recv(sock_DTP, response, BUFFER, 0);
+    do {
+        response[reply_len] = '\0';
+        printf("%s\n", response);
+        char received[BUFFER] = "200";
+        send(sock_DTP, received, strlen(received), 0);
+        reply_len = recv(sock_DTP, response, BUFFER, 0);
+    } while (!strstr(response, "end"));
+    printf("%s\n", response);
+    char confirm_end[BUFFER] = "end received";
+    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+}
+
+void help() {
+
 }
 
 bool dispatch(char input[]) {
     if(strstr(input, "ECHO")) {
         echo_loop();
-        return true;
+    } else if(strstr(input, "LIST")) {
+        list();
+    } else if(strstr(input, "HELP")) {
+        help();
     } else if(strstr(input, "QUIT")) {
         return false;
     }
+    return true;
 }
 
 void command_loop() {
-    printf("Ready.\n");
     char input[BUFFER];
     char response[BUFFER];
     int response_len;
     bool run = true;
     while(run) {
+        printf("Ready.\n");
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
         char* quit = strstr(input, "QUIT");

@@ -114,10 +114,51 @@ void echo_loop() {
             data[data_len] = '\0';
             char* quit = strstr(data, "QUIT");
             // check if the user has terminated the client-side of the program
-            if(quit) { break; }
+            if(quit) {
+                char response[MAX_DATA] = "Exiting ECHO";
+                printf("%s\n", response);
+                send(client_sock_DTP, response, strlen(response), 0);
+                break;
+            }
             send(client_sock_DTP, data, data_len, 0);
             printf("Sent mesg: %s", data);
         }
+    }
+}
+
+void dir_list() {
+    struct dirent *ent;
+    char path[MAX_DATA];
+    char receive[MAX_DATA];
+    sprintf(path, "%s%s", "./", access_path);
+    printf("%s\n", path);
+    DIR *dir = opendir(path);
+    while ((ent = readdir(dir)) != NULL) {
+        char name[MAX_DATA];
+        strncpy(name, ent->d_name, strlen(ent->d_name));
+        name[strlen(ent->d_name)] = '\0';
+        printf("%s\n", name);
+        send(client_sock_DTP, name, strlen(name), 0);
+        recv(client_sock_DTP, receive, MAX_DATA, 0);
+        if(!strstr(receive, "500")) {
+            printf("%s\n", "error");
+            break;
+        }
+    }
+    char end[MAX_DATA] = "end";
+    send(client_sock_DTP, end, strlen(end), 0);
+    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    printf("%s\n", receive);
+    closedir(dir);
+}
+
+void list() {
+    char receive[MAX_DATA];
+    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    if (strstr(receive, "DIR")) {
+        char send[MAX_DATA] = "[200] DIR";
+        send(client_sock_DTP, send, strlen(send), 0);
+        dir_list();
     }
 }
 
@@ -131,22 +172,32 @@ void command_loop() {
         data_len = recv(client_sock_PI, data, MAX_DATA, 0);
         data[data_len] = '\0';
         if(strstr(data, "QUIT")) {
-            printf("Client disconnected.\n");
+            char response[MAX_DATA] = "Client disconnected";
+            send(client_sock_PI, response, strlen(response), 0);
+            printf("%s\n", response);
             clean("Username", access_path);
             clean("Password", pass);
             shutdown(client_sock_PI, SHUT_RDWR);
             shutdown(client_sock_DTP, SHUT_RDWR);
             run = false;
         } else if(strstr(data, "ECHO")) {
-            char* response = "confirm ECHO";
-            printf("%s", response);
+            char response[MAX_DATA] = "Entering ECHO";
+            printf("%s\n", response);
             send(client_sock_PI, response, strlen(response) , 0);
             echo_loop();
+        } else if(strstr(data, "LIST")) {
+            char response[MAX_DATA] = "Sending list";
+            printf("%s\n", response);
+            send(client_sock_PI, response, strlen(response), 0);
+            // list available files
+            list();
         } else if(strstr(data, "NOOP")) {
-            char* response = "[200] command OK";
+            char response[MAX_DATA] = "[200] command OK";
+            printf("%s\n", response);
             send(client_sock_PI, response, strlen(response), 0);
         } else {
-            char* response = "[500] syntax error, command unrecognized";
+            char response[MAX_DATA] = "[500] syntax error, command unrecognized";
+            printf("%s\n", response);
             send(client_sock_PI, response, strlen(response), 0);
         }
     }
