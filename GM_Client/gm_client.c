@@ -129,11 +129,9 @@ void echo_loop() {
 void list(char* command) {
     int reply_len;
     char response[BUFFER]; // stores server response
-    // tell server what type of list to output
-    send(sock_DTP, command, strlen(command), 0);
-    reply_len = recv(sock_DTP, response, BUFFER, 0);
-    response[reply_len] = '\0';
-    printf("%s\n", response)
+    // lets server know data port is ready to receive data
+    char data_ready[BUFFER] = "data port ready";
+    send(sock_DTP, data_ready, strlen(data_ready), 0);
     reply_len = recv(sock_DTP, response, BUFFER, 0);
     do {
         response[reply_len] = '\0';
@@ -142,22 +140,19 @@ void list(char* command) {
         send(sock_DTP, received, strlen(received), 0);
         reply_len = recv(sock_DTP, response, BUFFER, 0);
     } while (!strstr(response, "end"));
+    response[reply_len] = '\0';
     printf("%s\n", response);
     char confirm_end[BUFFER] = "end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
-}
-
-void help() {
-
 }
 
 bool dispatch(char input[]) {
     if(strstr(input, "ECHO")) {
         echo_loop();
     } else if(strstr(input, "LIST")) {
-        list();
+        list("LIST");
     } else if(strstr(input, "HELP")) {
-        help();
+        list("HELP");
     } else if(strstr(input, "QUIT")) {
         return false;
     }
