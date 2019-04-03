@@ -68,7 +68,7 @@ void connect_DTP(int sockaddr_len) {
 
 void clean_pass() {
     int len = strlen(pass);
-    for(int i = 0; i < len; i++) { pass[i] = '\0'; }
+    memset(pass, '\n', len);
     printf("Password cleared.\n");
 }
 
