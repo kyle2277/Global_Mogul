@@ -126,34 +126,88 @@ void echo_loop() {
     }
 }
 
-void list(char* command) {
+void serial_recv() {
     int reply_len;
-    char response[BUFFER]; // stores server response
+    char receive[BUFFER]; // stores server response
+    char received[BUFFER] = "200"; // confirmation to server when data packet received
     // lets server know data port is ready to receive data
-    char data_ready[BUFFER] = "data port ready";
+    char data_ready[BUFFER] = "DTP ready";
     send(sock_DTP, data_ready, strlen(data_ready), 0);
-    reply_len = recv(sock_DTP, response, BUFFER, 0);
+    reply_len = recv(sock_DTP, receive, BUFFER, 0);
     do {
-        response[reply_len] = '\0';
-        printf("%s\n", response);
-        char received[BUFFER] = "200";
+        receive[reply_len] = '\0';
+        printf("%s\n", receive);
         send(sock_DTP, received, strlen(received), 0);
-        reply_len = recv(sock_DTP, response, BUFFER, 0);
-    } while (!strstr(response, "end"));
-    response[reply_len] = '\0';
-    printf("%s\n", response);
+        reply_len = recv(sock_DTP, receive, BUFFER, 0);
+    } while (!strstr(receive, "end"));
+    receive[reply_len] = '\0';
+    printf("%s\n", receive);
     char confirm_end[BUFFER] = "end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
-bool dispatch(char input[]) {
+char* check_input(char* input) {
+    int max_args = 2;
+    char* delim = " ";
+    char* token = strtok(input, delim);
+    int token_count = 0;
+    // free later
+    char* path = malloc(BUFFER);
+    bool skip = false;
+    while (token != NULL) {
+        token_count++;
+        token = strtok(NULL, delim);
+        if (token_count > max_args) {
+            printf("%s\n", "Too many args");
+            return NULL;
+        } else if (token != NULL) {
+            token[(int)strlen(token)-1] = '\0';
+            strncpy(path, token, strlen(token));
+            return path;
+        }
+    }
+    if (token_count < max_args) {
+        printf("%s\n", "Too few args");
+        return NULL;
+    }
+}
+
+void file_recv(char* path) {
+    //write to file using a byte array;
+    int reply_len;
+    char receive[BUFFER];
+    // data port ready to receive bytes
+    char received[BUFFER] = "200";
+    char data_ready[BUFFER] = "DTP ready";
+    send(sock_DTP, data_ready, strlen(data_ready), 0);
+    reply_len = recv(sock_DTP, receive, BUFFER, 0);
+    do {
+        receive[reply_len] = '\0';
+        printf("%s\n", receive);
+        send(sock_DTP, received, strlen(received), 0);
+        reply_len = recv(sock_DTP, receive, BUFFER, 0);
+    } while(!strstr(receive, "end"));
+    receive[reply_len] = '\0';
+    printf("%s\n", receive);
+    char confirm_end[BUFFER] = "end received";
+    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+}
+
+bool dispatch(char* input) {
     if(strstr(input, "ECHO")) {
         echo_loop();
     } else if(strstr(input, "LIST")) {
-        list("LIST");
+        serial_recv();
     } else if(strstr(input, "HELP")) {
-        list("HELP");
-    } else if(strstr(input, "QUIT")) {
+        serial_recv();
+    } else if(strstr(input, "RETR")) {
+        char* path = check_input(input);
+        if(path) {
+            file_recv(path);
+        }
+        // freeing memory of path variable
+        free(path);
+    }else if(strstr(input, "QUIT")) {
         return false;
     }
     return true;
