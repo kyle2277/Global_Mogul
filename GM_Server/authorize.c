@@ -17,7 +17,7 @@
  */
 void clean(char type[], char cred[]) {
     int len = strlen(cred);
-    for(int i = 0; i < len; i++) { cred[i] = '\0'; }
+    memset(cred, '\0', len);
     printf("%s cleared.\n", type);
 }
 

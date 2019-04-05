@@ -147,50 +147,52 @@ void serial_recv() {
 }
 
 char* check_input(char* input) {
-    int max_args = 2;
-    char* delim = " ";
-    char* token = strtok(input, delim);
-    int token_count = 0;
-    // free later
-    char* path = malloc(BUFFER);
-    bool skip = false;
-    while (token != NULL) {
-        token_count++;
-        token = strtok(NULL, delim);
-        if (token_count > max_args) {
-            printf("%s\n", "Too many args");
-            return NULL;
-        } else if (token != NULL) {
-            token[(int)strlen(token)-1] = '\0';
-            strncpy(path, token, strlen(token));
-            return path;
-        }
-    }
-    if (token_count < max_args) {
-        printf("%s\n", "Too few args");
+    char send_server[BUFFER] = "args ok?";
+    char* receive = malloc(BUFFER);
+    send(sock_PI, send_server, strlen(send_server), 0);
+    int reply_len = recv(sock_PI, receive, BUFFER, 0);
+    receive[reply_len] = '\0';
+    if (strstr(receive, "200")) {
+        //success, get path
+        strncpy(send_server, "path", strlen("path"));
+        send(sock_PI, send_server, strlen(send_server), 0);
+        reply_len = recv(sock_PI, receive, BUFFER, 0);
+        receive[reply_len] = '\0';
+        printf("%s\n", receive);
+        return receive;
+    } else {
+        printf("%s\n", receive);
         return NULL;
+        //failure
     }
 }
 
+int get_file_len() {
+    char length[BUFFER];
+    char data_ready[BUFFER] = "File length";
+    send(sock_PI, data_ready, strlen(data_ready), 0);
+    int reply_len = recv(sock_PI, length, BUFFER, 0);
+    length[reply_len] = '\0';
+    return (int) *length;
+}
+
 void file_recv(char* path) {
-    //write to file using a byte array;
-    int reply_len;
-    char receive[BUFFER];
+
+    // write to file using a byte array;
     // data port ready to receive bytes
-    char received[BUFFER] = "200";
+    int file_len = get_file_len();
+    char* file_bytes = malloc(file_len);
     char data_ready[BUFFER] = "DTP ready";
     send(sock_DTP, data_ready, strlen(data_ready), 0);
-    reply_len = recv(sock_DTP, receive, BUFFER, 0);
-    do {
-        receive[reply_len] = '\0';
-        printf("%s\n", receive);
-        send(sock_DTP, received, strlen(received), 0);
-        reply_len = recv(sock_DTP, receive, BUFFER, 0);
-    } while(!strstr(receive, "end"));
-    receive[reply_len] = '\0';
-    printf("%s\n", receive);
-    char confirm_end[BUFFER] = "end received";
+    recv(sock_DTP, file_bytes, file_len, 0);
+    char full_path[BUFFER];
+    sprintf(full_path, "./%s", path);
+    FILE* out = fopen(full_path, "w");
+    fwrite(file_bytes, 1, file_len, out);
+    fclose(out);
+    char confirm_end[BUFFER] = "[200] end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+    printf("%s\n", confirm_end);
 }
 
 bool dispatch(char* input) {

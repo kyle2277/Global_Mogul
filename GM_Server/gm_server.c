@@ -182,6 +182,108 @@ void list(char* list_type) {
     }
 }
 
+// get byte array to send to client
+char* get_bytes(char* path) {
+    char full_path[MAX_DATA];
+    sprintf(full_path, "./user/%s", path);
+    FILE* f = fopen(full_path, "r");
+    fseek(f, 0, SEEK_END);
+    long file_len = ftell(f);
+    char* file_bytes = malloc(file_len);
+    fseek(f, 0, SEEK_SET);
+    fread(file_bytes, 1, file_len, f);
+    fclose(f);
+    return file_bytes;
+}
+
+long get_file_size(char* path) {
+    char full_path[MAX_DATA];
+    sprintf(full_path, "./user/%s", path);
+    FILE* f = fopen(full_path, "r");
+    fseek(f, 0, SEEK_END);
+    long file_len = ftell(f);
+    fclose(f);
+    return file_len;
+}
+
+char* split_args(char* receive) {
+    int max_args = 2;
+    char* delim = " ";
+    char* token = strtok(receive, delim);
+    int token_count = 0;
+    // free later
+    char* path = malloc(MAX_DATA);
+    while (token != NULL) {
+        token_count++;
+        token = strtok(NULL, delim);
+        if (token_count > max_args) {
+            printf("%s\n", "Too many args");
+            return NULL;
+        } else if (token != NULL) {
+            token[(int)strlen(token)-1] = '\0';
+            strncpy(path, token, strlen(token));
+            return path;
+        }
+    }
+    if (token_count < max_args) {
+        printf("%s\n", "Too few args");
+        return NULL;
+    }
+}
+
+bool file_available(char* path) {
+    char full_path[MAX_DATA];
+    sprintf(full_path, "./user/%s", path);
+    FILE* f;
+    if(f = fopen(full_path, "r")) {
+        fclose(f);
+        return true;
+    }
+    printf("File %s does not exist", path);
+    return false;
+}
+
+char* print_reply(char* receive) {
+    int reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
+    receive[reply_len] = '\0';
+    printf("%s\n", receive);
+    return receive;
+}
+
+int send_file(char* args_input) {
+    char* path = split_args(args_input);
+    char receive[MAX_DATA];
+    int reply_len;
+    if(path && file_available(path)) {
+        print_reply(receive);
+        char success[MAX_DATA] = "200";
+        send(client_sock_PI, success, strlen(success), 0);
+        reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
+        receive[reply_len] = '\0';
+        //send path to client
+        send(client_sock_PI, path, strlen(path), 0);
+    } else {
+        char error[MAX_DATA] = "Too many or too few args";
+        send(client_sock_PI, error, strlen(error), 0);
+        return 0;
+    }
+    //client asks for file length
+    print_reply(receive);
+    long file_len = get_file_size(path);
+    send(client_sock_PI, &file_len, file_len, 0);
+    char* file_bytes = get_bytes(path);
+    send(client_sock_DTP, file_bytes, file_len, 0);
+    reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[reply_len] = '\0';
+    printf("%s\n", receive);
+    if(strstr(receive, "200")) {
+        printf("%s\n", "file transfer success");
+    } else {
+        printf("%s\n", "file transfer failure");
+    }
+    return 1;
+}
+
 //todo write cases for specific commands
 void command_loop() {
     char receive[MAX_DATA];
@@ -217,10 +319,16 @@ void command_loop() {
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // help list
             list("HELP");
-        } else if(strstr(receive, "NOOP")) {
-            char send_client[MAX_DATA] = "[200] command OK";
+        } else if(strstr(receive, "RETR")) {
+            char send_client[MAX_DATA] = "Retrieve";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
+            // send file
+            send_file(receive);
+        } else if(strstr(receive, "NOOP")) {
+                char send_client[MAX_DATA] = "[200] command OK";
+                printf("%s\n", send_client);
+                send(client_sock_PI, send_client, strlen(send_client), 0);
         } else {
             char send_client[MAX_DATA] = "[500] syntax error, command unrecognized";
             printf("%s\n", send_client);
