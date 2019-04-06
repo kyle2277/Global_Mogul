@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <string.h>
 #include <errno.h>
-#include <arpa/inet.h>
 #include <dirent.h>
-#include "authorize.h"
+#include "server_auth.h"
 
 // pre-processor definitions
 #define MAX_DATA 1024

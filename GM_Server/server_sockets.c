@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include "authorize.h"
+#include "server_auth.h"
 #include "server_sockets.h"
 
 // pre-processor definitions

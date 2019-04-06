@@ -3,10 +3,10 @@
 //
 
 #ifndef GM_SERVER_AUTHORIZE_H
+#include "core.h"
 #define GM_SERVER_AUTHORIZE_H
 #define MAX_DATA 1024
 
-typedef enum { false, true } bool;
 int sock_PI; // reference to the server's Protocol Interpreter (PI) socket which talks to the client
 int sock_DTP; // reference to the server's Data Transfer Process (DTP) socket which exchanges data with the client
 int client_sock_PI; // reference to connected client PI socket

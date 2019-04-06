@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include "authorize.h"
+#include "server_auth.h"
 
 #define MAX_DATA 1024
 
