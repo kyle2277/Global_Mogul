@@ -7,6 +7,7 @@
 #define MAX_DATA 1024
 
 typedef enum { false, true } bool;
+void terminate(char* message);
 void echo_loop();
 void dir_list();
 void help_list();

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
@@ -62,6 +63,13 @@ void command_loop() {
             send(client_sock_PI, send_client, strlen(send_client), 0);
         }
     }
+}
+
+void terminate(char* message) {
+    perror(message);
+    printf("%s\n", "Terminating process");
+    command_loop();
+    exit(-1);
 }
 
 int main(int argc, char *argv[]) {

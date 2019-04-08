@@ -37,6 +37,13 @@ void command_loop() {
     shutdown(sock_DTP, SHUT_RDWR);
 }
 
+void terminate(char* message) {
+    perror(message);
+    printf("%s\n", "Terminating process");
+    command_loop();
+    exit(-1);
+}
+
 int main(int argc, char *argv[]) {
     int sockaddr_len = sizeof(struct sockaddr_in);
     init_sockets(argv);
