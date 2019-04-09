@@ -7,7 +7,6 @@
 #define BUFFER 1024
 
 typedef enum { false, true } bool;
-void terminate(char* message);
 void echo_loop();
 void serial_recv();
 char* check_input(char* input);

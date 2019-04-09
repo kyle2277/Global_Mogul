@@ -31,6 +31,7 @@ void command_loop() {
         response[response_len] = '\0';
         printf("%s\n", response);
         run = dispatch(input);
+        memset(input, '\0', BUFFER);
     }
     clean_pass();
     shutdown(sock_PI, SHUT_RDWR);

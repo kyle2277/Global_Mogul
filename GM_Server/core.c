@@ -128,8 +128,8 @@ char* split_args(char* receive) {
             printf("%s\n", "Too many args");
             return NULL;
         } else if (token != NULL) {
-            token[(int)strlen(token)-1] = '\0';
             strncpy(path, token, strlen(token));
+            path[strlen(token)-1] = '\0';
             return path;
         }
     }
@@ -141,7 +141,7 @@ char* split_args(char* receive) {
 
 bool file_available(char* path) {
     char full_path[MAX_DATA];
-    sprintf(full_path, "./user/%s", path);
+    sprintf(full_path, "./%s/%s", access_path, path);
     FILE* f;
     if(f = fopen(full_path, "r")) {
         fclose(f);

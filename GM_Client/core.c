@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include "core.h"
 #include "client_sockets.h"
+
+#define OUTPUT "output"
 
 /* DEPRECATED */
 void echo_loop() {
@@ -76,17 +80,28 @@ int get_file_len() {
     return (int) *length;
 }
 
-void file_recv(char* path) {
+void check_output() {
+    DIR* output = opendir(OUTPUT);
+    if(ENOENT == errno) {
+        char command[BUFFER];
+        sprintf(command, "mkdir %s", OUTPUT);
+        system(command);
+    }
+    closedir(output);
+}
+
+void file_recv(char* file_name) {
 
     // write to file using a byte array;
     // data port ready to receive bytes
     int file_len = get_file_len();
     char* file_bytes = malloc(file_len);
-    char data_ready[BUFFER] = "DTP ready";
-    send(sock_DTP, data_ready, strlen(data_ready), 0);
+    //char data_ready[BUFFER] = "DTP ready";
+    //send(sock_DTP, data_ready, strlen(data_ready), 0);
     recv(sock_DTP, file_bytes, file_len, 0);
+    check_output();
     char full_path[BUFFER];
-    sprintf(full_path, "./%s", path);
+    sprintf(full_path, "./%s/%s", OUTPUT, file_name);
     FILE* out = fopen(full_path, "w");
     fwrite(file_bytes, 1, file_len, out);
     fclose(out);
@@ -103,12 +118,12 @@ bool dispatch(char* input) {
     } else if(strstr(input, "HELP")) {
         serial_recv();
     } else if(strstr(input, "RETR")) {
-        char* path = check_input(input);
-        if(path) {
-            file_recv(path);
+        char* file_name = check_input(input);
+        if(file_name) {
+            file_recv(file_name);
         }
         // freeing memory of path variable
-        free(path);
+        free(file_name);
     }else if(strstr(input, "QUIT")) {
         return false;
     }
