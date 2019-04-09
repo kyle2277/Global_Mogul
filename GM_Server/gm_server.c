@@ -65,6 +65,9 @@ void command_loop() {
     }
 }
 
+/*
+ * UNUSED
+ */
 void terminate(char* message) {
     perror(message);
     printf("%s\n", "Terminating process");

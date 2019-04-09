@@ -99,7 +99,7 @@ void get_auth() {
                     break;
                 }
                 if (token != NULL) {
-                    token[(int)strlen(token)-1] = '\0';
+                    token[strlen(token)-1] = '\0';
                     args[token_count] = token;
                 }
             }

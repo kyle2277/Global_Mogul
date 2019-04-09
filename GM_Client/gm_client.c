@@ -38,6 +38,9 @@ void command_loop() {
     shutdown(sock_DTP, SHUT_RDWR);
 }
 
+/*
+ * UNUSED
+ */
 void terminate(char* message) {
     perror(message);
     printf("%s\n", "Terminating process");
