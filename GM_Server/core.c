@@ -36,11 +36,11 @@ void echo_loop() {
 
 void dir_list() {
     struct dirent *ent;
-    char path[MAX_DATA];
+    char output_path[MAX_DATA];
     char receive[MAX_DATA];
-    sprintf(path, "%s%s", "./", access_path);
-    printf("%s\n", path);
-    DIR *dir = opendir(path);
+    sprintf(output_path, "%s%s", "./", access_path);
+    printf("%s\n", output_path);
+    DIR *dir = opendir(output_path);
     while ((ent = readdir(dir)) != NULL) {
         char name[MAX_DATA];
         strncpy(name, ent->d_name, strlen(ent->d_name));
@@ -91,9 +91,9 @@ void list(char* list_type) {
 }
 
 // get byte array to send to client
-char* get_bytes(char* path) {
+char* get_bytes(char* file_name) {
     char full_path[MAX_DATA];
-    sprintf(full_path, "./user/%s", path);
+    sprintf(full_path, "./%s/%s", access_path, file_name);
     FILE* f = fopen(full_path, "r");
     fseek(f, 0, SEEK_END);
     long file_len = ftell(f);
@@ -104,9 +104,9 @@ char* get_bytes(char* path) {
     return file_bytes;
 }
 
-long get_file_size(char* path) {
+long get_file_size(char* file_name) {
     char full_path[MAX_DATA];
-    sprintf(full_path, "./user/%s", path);
+    sprintf(full_path, "./%s/%s", access_path, file_name);
     FILE* f = fopen(full_path, "r");
     fseek(f, 0, SEEK_END);
     long file_len = ftell(f);
@@ -120,7 +120,7 @@ char* split_args(char* receive) {
     char* token = strtok(receive, delim);
     int token_count = 0;
     // free later
-    char* path = malloc(MAX_DATA);
+    char* file_name = malloc(MAX_DATA);
     while (token != NULL) {
         token_count++;
         token = strtok(NULL, delim);
@@ -128,9 +128,9 @@ char* split_args(char* receive) {
             printf("%s\n", "Too many args");
             return NULL;
         } else if (token != NULL) {
-            strncpy(path, token, strlen(token));
-            path[strlen(token)-1] = '\0';
-            return path;
+            strncpy(file_name, token, strlen(token));
+            file_name[strlen(token)-1] = '\0';
+            return file_name;
         }
     }
     if (token_count < max_args) {
@@ -139,15 +139,15 @@ char* split_args(char* receive) {
     }
 }
 
-bool file_available(char* path) {
+bool file_available(char* file_name) {
     char full_path[MAX_DATA];
-    sprintf(full_path, "./%s/%s", access_path, path);
+    sprintf(full_path, "./%s/%s", access_path, file_name);
     FILE* f;
     if(f = fopen(full_path, "r")) {
         fclose(f);
         return true;
     }
-    printf("File %s does not exist", path);
+    printf("File %s does not exist\n", file_name);
     return false;
 }
 
@@ -159,17 +159,17 @@ char* print_reply(char* receive) {
 }
 
 int send_file(char* args_input) {
-    char* path = split_args(args_input);
+    char* file_name = split_args(args_input);
     char receive[MAX_DATA];
     int reply_len;
-    if(path && file_available(path)) {
+    if(file_name && file_available(file_name)) {
         print_reply(receive);
         char success[MAX_DATA] = "200";
         send(client_sock_PI, success, strlen(success), 0);
         reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
         receive[reply_len] = '\0';
-        //send path to client
-        send(client_sock_PI, path, strlen(path), 0);
+        //send file_name to client
+        send(client_sock_PI, file_name, strlen(file_name), 0);
     } else {
         char error[MAX_DATA] = "Too many or too few args";
         send(client_sock_PI, error, strlen(error), 0);
@@ -177,9 +177,9 @@ int send_file(char* args_input) {
     }
     //client asks for file length
     print_reply(receive);
-    long file_len = get_file_size(path);
+    long file_len = get_file_size(file_name);
     send(client_sock_PI, &file_len, file_len, 0);
-    char* file_bytes = get_bytes(path);
+    char* file_bytes = get_bytes(file_name);
     send(client_sock_DTP, file_bytes, file_len, 0);
     reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';

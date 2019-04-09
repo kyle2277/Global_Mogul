@@ -49,8 +49,8 @@ void command_loop() {
             list("HELP");
         } else if(strstr(receive, "RETR")) {
             char send_client[MAX_DATA] = "Retrieve";
-            printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
+            printf("%s\n", send_client);
             // send file
             send_file(receive);
         } else if(strstr(receive, "NOOP")) {
@@ -62,6 +62,7 @@ void command_loop() {
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
         }
+        memset(receive, '\0', MAX_DATA);
     }
 }
 

@@ -57,12 +57,13 @@ char* check_input(char* input) {
     int reply_len = recv(sock_PI, receive, BUFFER, 0);
     receive[reply_len] = '\0';
     if (strstr(receive, "200")) {
-        //success, get path
-        strncpy(send_server, "path", strlen("path"));
+        //success, get file name
+        char send_server[BUFFER] = "file name";
         send(sock_PI, send_server, strlen(send_server), 0);
         reply_len = recv(sock_PI, receive, BUFFER, 0);
         receive[reply_len] = '\0';
         printf("%s\n", receive);
+        // return file name
         return receive;
     } else {
         printf("%s\n", receive);
