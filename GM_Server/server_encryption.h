@@ -1,0 +1,8 @@
+//
+// Created by kylej on 4/9/19.
+//
+
+#ifndef GM_SERVER_SERVER_ENCRYPTION_H
+#define GM_SERVER_SERVER_ENCRYPTION_H
+
+#endif //GM_SERVER_SERVER_ENCRYPTION_H
