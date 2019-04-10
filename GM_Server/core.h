@@ -15,7 +15,7 @@ char* get_bytes(char* path);
 long get_file_size(char* path);
 char* split_args(char* receive);
 bool file_available(char* path);
-char* print_reply(char* receive);
+void print_reply(char* receive);
 int send_file(char* args_input);
 
 

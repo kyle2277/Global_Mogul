@@ -91,6 +91,26 @@ void check_output() {
     closedir(output);
 }
 
+int write(char* file_name, char* full_path) {
+    FILE* f;
+    if((f = fopen(full_path, "r"))) {
+        fclose(f);
+        char user_input[BUFFER];
+        printf("File %s already exists.\nWould you like to overwrite it? [y/n]\n", file_name);
+        fgets(user_input, BUFFER, stdin);
+        if(strstr(user_input, "y") || strstr(user_input, "Y")) {
+            char command[BUFFER];
+            sprintf(command, "rm ./%s/%s", OUTPUT, file_name);
+            system(command);
+            return 1;
+        } else {
+            // file is received but not written
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void file_recv(char* file_name) {
 
     // write to file using a byte array;
@@ -100,15 +120,18 @@ void file_recv(char* file_name) {
     //char data_ready[BUFFER] = "DTP ready";
     //send(sock_DTP, data_ready, strlen(data_ready), 0);
     recv(sock_DTP, file_bytes, file_len, 0);
-    check_output();
     char full_path[BUFFER];
     sprintf(full_path, "./%s/%s", OUTPUT, file_name);
-    FILE* out = fopen(full_path, "w");
-    fwrite(file_bytes, 1, file_len, out);
-    fclose(out);
+    check_output();
+    if(write(file_name, full_path)) {
+        FILE* out = fopen(full_path, "w");
+        fwrite(file_bytes, 1, file_len, out);
+        fclose(out);
+    }
     char confirm_end[BUFFER] = "[200] end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
+    free(file_bytes);
 }
 
 bool dispatch(char* input) {

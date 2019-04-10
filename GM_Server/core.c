@@ -143,7 +143,7 @@ bool file_available(char* file_name) {
     char full_path[MAX_DATA];
     sprintf(full_path, "./%s/%s", access_path, file_name);
     FILE* f;
-    if(f = fopen(full_path, "r")) {
+    if((f = fopen(full_path, "r"))) {
         fclose(f);
         return true;
     }
@@ -151,19 +151,18 @@ bool file_available(char* file_name) {
     return false;
 }
 
-char* print_reply(char* receive) {
+void print_reply(char* receive) {
     int reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
     printf("%s\n", receive);
-    return receive;
 }
 
 int send_file(char* args_input) {
     char* file_name = split_args(args_input);
     char receive[MAX_DATA];
     int reply_len;
+    print_reply(receive);
     if(file_name && file_available(file_name)) {
-        print_reply(receive);
         char success[MAX_DATA] = "200";
         send(client_sock_PI, success, strlen(success), 0);
         reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
@@ -173,6 +172,7 @@ int send_file(char* args_input) {
     } else {
         char error[MAX_DATA] = "Too many or too few args";
         send(client_sock_PI, error, strlen(error), 0);
+        free(file_name);
         return 0;
     }
     //client asks for file length
