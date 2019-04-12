@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include "core.h"
 #include "client_sockets.h"
+#include "client_decryption.h"
 
 #define OUTPUT "output"
 
