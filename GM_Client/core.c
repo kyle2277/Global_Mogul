@@ -9,6 +9,7 @@
 #include "client_decryption.h"
 
 #define OUTPUT "output"
+#define ENCRYPTED_TAG "encrypted_"
 
 /* DEPRECATED */
 void echo_loop() {
@@ -122,7 +123,7 @@ void file_recv(char* file_name) {
     //send(sock_DTP, data_ready, strlen(data_ready), 0);
     recv(sock_DTP, file_bytes, file_len, 0);
     char full_path[BUFFER];
-    sprintf(full_path, "./%s/%s", OUTPUT, file_name);
+    sprintf(full_path, "./%s/%s%s", OUTPUT, ENCRYPTED_TAG, file_name);
     check_output();
     if(write(file_name, full_path)) {
         FILE* out = fopen(full_path, "w");
@@ -133,6 +134,7 @@ void file_recv(char* file_name) {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
     free(file_bytes);
+    //decrypt
 }
 
 bool dispatch(char* input) {

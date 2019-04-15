@@ -4,15 +4,17 @@
 #include "client_decryption.h"
 #include "client_auth.h"
 
-#define FONT_BLANC "./Font_Blanc/FontBlancMain.class"
-#define FONT_BLANC_LOG "./Font_Blanc/log.txt"
+#define FONT_BLANC "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc/FontBlancMain"
+#define FONT_BLANC_LOG "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc/log.txt"
+#define ENCRYPTED_TAG "encrypted_"
 
 // change use of sprintf
 
 bool decrypt(char* full_path) {
     if(FB_exists()) {
-        char* command[BUFFER];
-        sprintf(command, "java %s %s %s decrypt", FONT_BLANC, full_path, pass);\
+        char* command = malloc(BUFFER);
+        sprintf(command, "java %s %s %s decrypt", FONT_BLANC, full_path, pass);
+        free(command);
         return check_log();
     }
     return false;
