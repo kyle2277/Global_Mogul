@@ -5,6 +5,7 @@
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
+#include "jni_encryption.h"
 
 // pre-processor definitions
 #define ERROR -1
@@ -68,13 +69,14 @@ void command_loop() {
 
 /*
  * UNUSED
- */
+*/
 void terminate(char* message) {
     perror(message);
     printf("%s\n", "Terminating process");
     command_loop();
     exit(-1);
 }
+
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in server_PI;
@@ -91,7 +93,7 @@ int main(int argc, char *argv[]) {
         connect_PI(sockaddr_len, client_PI);
         get_auth();
         connect_DTP(sockaddr_len, client_DTP);
-//        printf("Listening.\n");
+        printf("Listening.\n");
         command_loop();
     }
 }
