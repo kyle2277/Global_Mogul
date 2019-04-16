@@ -5,6 +5,10 @@
 #ifndef GM_SERVER_JNI_TEST_H
 #define GM_SERVER_JNI_TEST_H
 
-int JNI_encrypt();
+#include "core.h"
+
+bool JNI_encrypt(char *file_path);
+bool FB_exists();
+bool check_log();
 
 #endif //GM_SERVER_JNI_TEST_H
