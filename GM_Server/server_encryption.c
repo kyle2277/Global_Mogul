@@ -9,6 +9,10 @@
 #define FONT_BLANC "FontBlancMain"
 #define FONT_BLANC_LOG "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc/log.txt"
 
+/*
+ * ALL DEPRECATED
+ */
+
 bool encrypt(char* file_path) {
     if(FB_exists()) {
         char* command = malloc(MAX_DATA);

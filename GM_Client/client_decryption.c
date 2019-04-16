@@ -8,7 +8,9 @@
 #define FONT_BLANC_LOG "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc/log.txt"
 #define ENCRYPTED_TAG "encrypted_"
 
-// change use of sprintf
+/*
+ * ALL DEPRECATED
+ */
 
 bool decrypt(char* full_path) {
     if(FB_exists()) {
