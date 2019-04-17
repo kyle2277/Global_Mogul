@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include "server_auth.h"
+#include "jni_encryption.h"
+#include <unistd.h>
 
 #define MAX_DATA 1024
-#define ENCRYPTED_TAG "encrytped_"
+#define ENCRYPTED_TAG "encrypted_"
+#define ENCRYPTED_EXT ".txt"
 
  /*
  * receives data from client on PI channel and echoes data back on DTP channel.
@@ -159,16 +162,27 @@ bool send_file(char* args_input) {
     char* file_name = split_args(args_input);
     char receive[MAX_DATA];
     int reply_len;
-    char full_path[MAX_DATA];
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
+    char absolute_path[256];
+    char encrypted_path[MAX_DATA];
     print_reply(receive);
     if(file_name && file_available(file_name)) {
-        sprintf(full_path, "./%s/%s", access_path, file_name);
-        char success[MAX_DATA] = "200";
-        send(client_sock_PI, success, strlen(success), 0);
-        reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
-        receive[reply_len] = '\0';
-        //send file_name to client
-        send(client_sock_PI, file_name, strlen(file_name), 0);
+        sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
+        int encrypt = JNI_encrypt(absolute_path);
+        if(encrypt) {
+            sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+            char success[MAX_DATA] = "200";
+            send(client_sock_PI, success, strlen(success), 0);
+            reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
+            receive[reply_len] = '\0';
+            //send file_name to client
+            send(client_sock_PI, file_name, strlen(file_name), 0);
+        } else {
+            printf("%s\n", "Encryption failure.");
+            free(file_name);
+            return false;
+        }
     } else {
         char error[MAX_DATA] = "Too many or too few args";
         send(client_sock_PI, error, strlen(error), 0);
@@ -177,9 +191,9 @@ bool send_file(char* args_input) {
     }
     //client asks for file length
     print_reply(receive);
-    long file_len = get_file_size(full_path);
+    long file_len = get_file_size(encrypted_path);
     send(client_sock_PI, &file_len, file_len, 0);
-    char* file_bytes = get_bytes(full_path);
+    char* file_bytes = get_bytes(encrypted_path);
     send(client_sock_DTP, file_bytes, file_len, 0);
     reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
@@ -189,6 +203,7 @@ bool send_file(char* args_input) {
     } else {
         printf("%s\n", "file transfer failure");
     }
+    free(file_name);
     free(file_bytes);
     return true;
 }

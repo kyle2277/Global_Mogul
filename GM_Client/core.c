@@ -10,6 +10,7 @@
 
 #define OUTPUT "output"
 #define ENCRYPTED_TAG "encrypted_"
+#define ENCRYPTED_EXT ".txt"
 
 /* DEPRECATED */
 void echo_loop() {
@@ -102,7 +103,7 @@ int write(char* file_name, char* full_path) {
         fgets(user_input, BUFFER, stdin);
         if(strstr(user_input, "y") || strstr(user_input, "Y")) {
             char command[BUFFER];
-            sprintf(command, "rm ./%s/%s", OUTPUT, file_name);
+            sprintf(command, "rm ./%s/%s%s%s", OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
             system(command);
             return 1;
         } else {
@@ -123,7 +124,7 @@ void file_recv(char* file_name) {
     //send(sock_DTP, data_ready, strlen(data_ready), 0);
     recv(sock_DTP, file_bytes, file_len, 0);
     char full_path[BUFFER];
-    sprintf(full_path, "./%s/%s", OUTPUT, file_name);
+    sprintf(full_path, "./%s/%s%s", OUTPUT, ENCRYPTED_TAG, file_name);
     check_output();
     if(write(file_name, full_path)) {
         FILE* out = fopen(full_path, "w");

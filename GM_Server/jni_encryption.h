@@ -7,7 +7,7 @@
 
 #include "core.h"
 
-bool JNI_encrypt(char *file_path);
+int JNI_encrypt(char *file_path);
 bool FB_exists();
 bool check_log();
 
