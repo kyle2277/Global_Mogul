@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include "server_auth.h"
-#include "jni_encryption.h"
 #include <unistd.h>
+#include "server_auth.h"
+
 
 #define MAX_DATA 1024
 #define ENCRYPTED_TAG "encrypted_"
@@ -169,8 +169,7 @@ bool send_file(char* args_input) {
     print_reply(receive);
     if(file_name && file_available(file_name)) {
         sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
-        int encrypt = JNI_encrypt(absolute_path);
-        if(encrypt) {
+        if(JNI_encrypt(absolute_path, pass, "encrypt")) {
             sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
             char success[MAX_DATA] = "200";
             send(client_sock_PI, success, strlen(success), 0);
@@ -180,6 +179,7 @@ bool send_file(char* args_input) {
             send(client_sock_PI, file_name, strlen(file_name), 0);
         } else {
             printf("%s\n", "Encryption failure.");
+            check_log();
             free(file_name);
             return false;
         }
@@ -203,6 +203,8 @@ bool send_file(char* args_input) {
     } else {
         printf("%s\n", "file transfer failure");
     }
+    // Delete encrypted file
+    remove(encrypted_path);
     free(file_name);
     free(file_bytes);
     return true;

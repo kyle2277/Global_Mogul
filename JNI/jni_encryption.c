@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "server_auth.h"
 #include "jni_encryption.h"
 
 #define FONT_BLANC_PATH "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc"
@@ -16,17 +15,17 @@
 #define PATH_SEPARATOR ':'
 #endif
 
-int JNI_encrypt(char *full_path) {
+#define MAX_DATA 1024
+
+int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
     if(FB_exists()) {
         JNIEnv *env;
         JavaVM *jvm;
         JavaVMInitArgs vm_args;
         long status;
         jclass cls;
-        int result = 0;
         jmethodID mid;
         JavaVMOption options[2];
-        char *encrypt = "encrypt";
 
         int classpath_len = strlen("-Djava.class.path=") + strlen(FONT_BLANC_PATH) + strlen(CLASSPATH);
         char classpath[classpath_len];
@@ -47,21 +46,16 @@ int JNI_encrypt(char *full_path) {
                 mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
                 if(mid != 0) {
                     const char *file_path_const = full_path;
-                    const char *encode_key_const = pass;
+                    const char *encode_key_const = encryptKey;
                     const char *encrypt_const = encrypt;
                     jstring file_path = (*env)->NewStringUTF(env, file_path_const);
                     jstring encodeKey = (*env)->NewStringUTF(env, encode_key_const);
                     jstring encrypt_command = (*env)->NewStringUTF(env, encrypt_const);
                     num = (*env)->CallStaticIntMethod(env, cls, mid, file_path, encodeKey, encrypt_command);
-//                    (*env)->ReleaseStringUTFChars(env, file_path, full_path);
-//                    (*env)->ReleaseStringUTFChars(env, encodeKey, pass);
-//                    (*env)->ReleaseStringUTFChars(env, encrypt_command, encrypt);
-                    (*jvm)->DestroyJavaVM(jvm);
+                    //(*jvm)->DestroyJavaVM(jvm);
                     printf("%d\n", num);
-
+                    return (int) num;
                 }
-
-                return (int) num;
             }
         }
     }
@@ -82,21 +76,14 @@ bool FB_exists() {
 
 bool check_log() {
     FILE* log;
-    char* log_path = malloc(MAX_DATA);
-    sprintf(log_path, "%s", FONT_BLANC_LOG);
-    if((log = fopen(log_path, "r"))) {
+    if((log = fopen(FONT_BLANC_LOG, "r"))) {
         char ch;
         while((ch = fgetc(log)) != EOF) {
             printf("%c", ch);
         }
         printf("\n");
         fclose(log);
-        free(log_path);
         return false;
     }
-    free(log_path);
     return true;
 }
-
-
-

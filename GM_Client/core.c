@@ -4,9 +4,11 @@
 #include <dirent.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "core.h"
 #include "client_sockets.h"
-#include "client_decryption.h"
+#include "client_auth.h"
+
 
 #define OUTPUT "output"
 #define ENCRYPTED_TAG "encrypted_"
@@ -94,24 +96,22 @@ void check_output() {
     closedir(output);
 }
 
-int write(char* file_name, char* full_path) {
+bool can_write(char* file_name, char* decrypt_path) {
     FILE* f;
-    if((f = fopen(full_path, "r"))) {
+    if((f = fopen(decrypt_path, "r"))) {
         fclose(f);
         char user_input[BUFFER];
         printf("File %s already exists.\nWould you like to overwrite it? [y/n]\n", file_name);
         fgets(user_input, BUFFER, stdin);
         if(strstr(user_input, "y") || strstr(user_input, "Y")) {
-            char command[BUFFER];
-            sprintf(command, "rm ./%s/%s%s%s", OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
-            system(command);
-            return 1;
+            remove(decrypt_path);
+            return true;
         } else {
             // file is received but not written
-            return 0;
+            return false;
         }
     }
-    return 1;
+    return true;
 }
 
 void file_recv(char* file_name) {
@@ -123,11 +123,15 @@ void file_recv(char* file_name) {
     //char data_ready[BUFFER] = "DTP ready";
     //send(sock_DTP, data_ready, strlen(data_ready), 0);
     recv(sock_DTP, file_bytes, file_len, 0);
-    char full_path[BUFFER];
-    sprintf(full_path, "./%s/%s%s", OUTPUT, ENCRYPTED_TAG, file_name);
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
+    char decrypt_path[BUFFER];
+    sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
+    char absolute_path[BUFFER];
+    sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
     check_output();
-    if(write(file_name, full_path)) {
-        FILE* out = fopen(full_path, "w");
+    if(can_write(file_name, decrypt_path)) {
+        FILE* out = fopen(absolute_path, "w");
         fwrite(file_bytes, 1, file_len, out);
         fclose(out);
     }
@@ -135,6 +139,14 @@ void file_recv(char* file_name) {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
     free(file_bytes);
+    if(JNI_encrypt(decrypt_path, pass, "decrypt")) {
+        printf("%s\n", "Decryption successful.");
+        // Delete encrypted file
+        remove(absolute_path);
+    } else {
+        printf("%s\n", "Decryption failed.");
+        check_log();
+    }
 }
 
 bool dispatch(char* input) {

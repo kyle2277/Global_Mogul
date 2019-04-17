@@ -5,9 +5,8 @@
 #ifndef GM_SERVER_JNI_TEST_H
 #define GM_SERVER_JNI_TEST_H
 
-#include "core.h"
-
-int JNI_encrypt(char *file_path);
+typedef enum { false, true } bool;
+int JNI_encrypt(char *file_path, char *encryptKey, char *encrypt);
 bool FB_exists();
 bool check_log();
 
