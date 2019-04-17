@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include "core.h"
 #include "client_sockets.h"
 #include "client_auth.h"
@@ -87,13 +88,12 @@ int get_file_len() {
 }
 
 void check_output() {
-    DIR* output = opendir(OUTPUT);
-    if(ENOENT == errno) {
-        char command[BUFFER];
-        sprintf(command, "mkdir %s", OUTPUT);
-        system(command);
-    }
-    closedir(output);
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
+    char absolute_output[BUFFER];
+    int path_len = strlen(cwd) + strlen(OUTPUT);
+    snprintf(absolute_output, path_len, "%s/%s", cwd, OUTPUT);
+    mkdir(absolute_output, S_IRWXU);
 }
 
 bool can_write(char* file_name, char* decrypt_path) {

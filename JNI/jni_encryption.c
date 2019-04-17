@@ -17,14 +17,14 @@
 
 #define MAX_DATA 1024
 
-int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
+JNIEnv *env;
+JavaVM *jvm;
+JavaVMInitArgs vm_args;
+jclass cls;
+jmethodID mid;
+
+bool JNI_init() {
     if(FB_exists()) {
-        JNIEnv *env;
-        JavaVM *jvm;
-        JavaVMInitArgs vm_args;
-        long status;
-        jclass cls;
-        jmethodID mid;
         JavaVMOption options[2];
 
         int classpath_len = strlen("-Djava.class.path=") + strlen(FONT_BLANC_PATH) + strlen(CLASSPATH);
@@ -37,29 +37,28 @@ int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
         vm_args.nOptions = 2;
         vm_args.options = options;
         vm_args.ignoreUnrecognized = JNI_FALSE;
-        status = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
+        return (JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args) != JNI_ERR);
+    }
+}
 
-        if(status != JNI_ERR) {
-            cls = (*env)->FindClass(env, "FontBlancMain");
-            jint num = 0;
-            if(cls != 0) {
-                mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
-                if(mid != 0) {
-                    const char *file_path_const = full_path;
-                    const char *encode_key_const = encryptKey;
-                    const char *encrypt_const = encrypt;
-                    jstring file_path = (*env)->NewStringUTF(env, file_path_const);
-                    jstring encodeKey = (*env)->NewStringUTF(env, encode_key_const);
-                    jstring encrypt_command = (*env)->NewStringUTF(env, encrypt_const);
-                    num = (*env)->CallStaticIntMethod(env, cls, mid, file_path, encodeKey, encrypt_command);
-                    //(*jvm)->DestroyJavaVM(jvm);
-                    printf("%d\n", num);
-                    return (int) num;
-                }
-            }
+int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
+    cls = (*env)->FindClass(env, "FontBlancMain");
+    jint num = 0;
+    if(cls != 0) {
+        mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
+        if(mid != 0) {
+            const char *file_path_const = full_path;
+            const char *encode_key_const = encryptKey;
+            const char *encrypt_const = encrypt;
+            jstring file_path = (*env)->NewStringUTF(env, file_path_const);
+            jstring encodeKey = (*env)->NewStringUTF(env, encode_key_const);
+            jstring encrypt_command = (*env)->NewStringUTF(env, encrypt_const);
+            num = (*env)->CallStaticIntMethod(env, cls, mid, file_path, encodeKey, encrypt_command);
+            //(*jvm)->DestroyJavaVM(jvm);
+            printf("%d\n", num);
+            return (int) num;
         }
     }
-    return 0;
 }
 
 bool FB_exists() {
@@ -86,4 +85,9 @@ bool check_log() {
         return false;
     }
     return true;
+}
+
+void JNI_end() {
+    printf("%s\n", "JVM terminated.");
+    (*jvm)->DestroyJavaVM(jvm);
 }

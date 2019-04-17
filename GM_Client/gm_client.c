@@ -43,7 +43,7 @@ void command_loop() {
  */
 void terminate(char* message) {
     perror(message);
-    printf("%s\n", "Terminating process");
+    printf("%s\n", "Terminating process.");
     command_loop();
     exit(-1);
 }
@@ -51,10 +51,16 @@ void terminate(char* message) {
 int main(int argc, char *argv[]) {
     int sockaddr_len = sizeof(struct sockaddr_in);
     init_sockets(argv);
+
     connect_PI(sockaddr_len);
     send_auth();
+    if(!JNI_init()) {
+        printf("%s\n", "JVM failure.");
+        exit(0);
+    }
     connect_DTP(sockaddr_len);
     command_loop();
+    JNI_end();
     return 0;
 }
 

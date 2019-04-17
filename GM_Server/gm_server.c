@@ -5,7 +5,7 @@
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
-#include "jni_encryption.h"
+#include "../JNI/jni_encryption.h"
 
 // pre-processor definitions
 #define ERROR -1
@@ -23,7 +23,7 @@ void command_loop() {
         data_len = recv(client_sock_PI, receive, MAX_DATA, 0);
         receive[data_len] = '\0';
         if(strstr(receive, "QUIT")) {
-            char send_client[MAX_DATA] = "Client disconnected";
+            char send_client[MAX_DATA] = "Client disconnected.";
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             clean("Username", access_path);
@@ -72,7 +72,7 @@ void command_loop() {
 */
 void terminate(char* message) {
     perror(message);
-    printf("%s\n", "Terminating process");
+    printf("%s\n", "Terminating process.");
     command_loop();
     exit(-1);
 }
@@ -92,10 +92,16 @@ int main(int argc, char *argv[]) {
     while(true) {
         connect_PI(sockaddr_len, client_PI);
         get_auth();
+        if(!JNI_init()) {
+            printf("%s\n", "JVM failure.");
+            exit(0);
+        }
         connect_DTP(sockaddr_len, client_DTP);
         printf("Listening.\n");
         command_loop();
+        JNI_end();
     }
+
 }
 
 /* POINTERS
