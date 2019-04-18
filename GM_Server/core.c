@@ -59,19 +59,22 @@ void dir_list() {
     }
     char end[MAX_DATA] = "end";
     send(client_sock_DTP, end, strlen(end), 0);
-    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
     printf("%s\n", receive);
     closedir(dir);
 }
 
 void help_list() {
     char receive[MAX_DATA];
-    char send_client[MAX_DATA] = "this is the list";
+    char send_client[MAX_DATA] = "Commands:\nECHO - echoes input\nLIST - lists retrievable files\n"
+                                 "RETR <file name> - retrieve file\nNOOP - check connection\nHELP - help list\nQUIT - exit";
     send(client_sock_DTP, send_client, strlen(send_client), 0);
     recv(client_sock_DTP, receive, MAX_DATA, 0);
     char end[MAX_DATA] = "end";
     send(client_sock_DTP, end, strlen(end), 0);
-    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
     printf("%s\n", receive);
 }
 
@@ -87,7 +90,7 @@ void list(char* list_type) {
         recv(client_sock_DTP, receive, MAX_DATA, 0);
         dir_list();
     } else if(strstr(list_type, "HELP")) {
-        char send_client[MAX_DATA] = "[200] HELP";
+        char send_client[MAX_DATA] = "[200] HELP\n";
         send(client_sock_DTP, send_client, strlen(send_client), 0);
         recv(client_sock_DTP, receive, MAX_DATA, 0);
         help_list();

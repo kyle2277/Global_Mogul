@@ -29,7 +29,7 @@ void set_pass(char input[]) {
 void send_auth() {
     char input[BUFFER]; // stores user input
     char auth_reply[BUFFER]; // stores server response
-    printf("[332] Authorization required.\n");
+    printf("[332] Authorization required.\nUSER <username>\nPASS <encryption key>\n");
     fgets(input, BUFFER, stdin);
     send(sock_PI, input, strlen(input), 0);
     int reply_len;

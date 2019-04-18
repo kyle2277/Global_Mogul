@@ -3,9 +3,15 @@ project(GM_Client C)
 
 set(CMAKE_C_STANDARD 99)
 
-set(JNI_LIB /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server)
-set(JNI /usr/lib/jvm/java-8-openjdk-amd64/include)
-set(JNI_LINUX /usr/lib/jvm/java-8-openjdk-amd64/include/linux)
+set(JAVA $ENV{JAVA_HOME})
+
+set(JNI_LIB ${JAVA}/jre/lib/amd46/server)
+set(JNI ${JAVA}/include)
+set(JNI_LINUX ${JNI}/linux)
+
+#set(JNI_LIB /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server)
+#set(JNI /usr/lib/jvm/java-8-openjdk-amd64/include)
+#set(JNI_LINUX /usr/lib/jvm/java-8-openjdk-amd64/include/linux)
 
 include_directories(${JNI} ${JNI_LINUX})
 link_directories(${JNI_LIB})

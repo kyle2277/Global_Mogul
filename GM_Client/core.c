@@ -50,8 +50,6 @@ void serial_recv() {
         send(sock_DTP, received, strlen(received), 0);
         reply_len = recv(sock_DTP, receive, BUFFER, 0);
     } while (!strstr(receive, "end"));
-    receive[reply_len] = '\0';
-    printf("%s\n", receive);
     char confirm_end[BUFFER] = "end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
