@@ -2,6 +2,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
@@ -11,6 +12,7 @@
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
+#define HOST server
 
 // TODO add termination function that can exit both client and server at any time
 
@@ -79,6 +81,8 @@ void terminate(char* message) {
 
 
 int main(int argc, char *argv[]) {
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
     struct sockaddr_in server_PI;
     struct sockaddr_in server_DTP;
     struct sockaddr_in client_PI;
@@ -92,7 +96,7 @@ int main(int argc, char *argv[]) {
     while(true) {
         connect_PI(sockaddr_len, client_PI);
         get_auth();
-        if(!JNI_init()) {
+        if(!JNI_init(cwd)) {
             printf("%s\n", "JVM failure.");
             exit(0);
         }

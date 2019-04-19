@@ -2,12 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "jni_encryption.h"
 
-#define FONT_BLANC_PATH "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc"
-#define CLASSPATH "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc:/home/kylej/Documents/Kyle/Dev/Arkadiusz2.0/ejml/ejml-simple-0.37.1.jar:/home/kylej/Documents/Kyle/Dev/Arkadiusz2.0/ejml/ejml-core-0.37.1.jar:/home/kylej/Documents/Kyle/Dev/Arkadiusz2.0/ejml/ejml-ddense-0.37.1.jar:/home/kylej/Documents/Kyle/Dev/Arkadiusz2.0/commons-lang3-3.8.1/commons-lang3-3.8.1.jar:."
 #define FONT_BLANC "FontBlancMain"
-#define FONT_BLANC_LOG "/home/kylej/Documents/Kyle/Dev/ProjectFB/Font_Blanc/log.txt"
+#define FONT_BLANC_PATH "../JNI/Font_Blanc/java"
+#define FONT_BLANC_LOG "../JNI/Font_Blanc/log.txt"
+#define EJML_SIMPLE "../bin/ejml-simple-0.38.jar"
+#define EJML_CORE "../bin/ejml-core-0.38.jar"
+#define EJML_DDENSE "../bin/ejml-ddense-0.38.jar"
+#define COMMONS_LANG "../bin/commons-lang3-3.8.1.jar"
 
 #ifdef _WIN32
 #define PATH_SEPARATOR ';'
@@ -23,13 +27,13 @@ JavaVMInitArgs vm_args;
 jclass cls;
 jmethodID mid;
 
-bool JNI_init() {
-    if(FB_exists()) {
+bool JNI_init(char *cwd) {
+    if(FB_exists(cwd)) {
         JavaVMOption options[2];
 
-        int classpath_len = strlen("-Djava.class.path=") + strlen(FONT_BLANC_PATH) + strlen(CLASSPATH);
-        char classpath[classpath_len];
-        snprintf(classpath, classpath_len, "-Djava.class.path=%s:%s", FONT_BLANC_PATH, CLASSPATH);
+        getcwd(cwd, sizeof(cwd));
+        char classpath[MAX_DATA];
+        sprintf(classpath, "-Djava.class.path=%s/%s:%s/%s:%s/%s:%s/%s:%s/%s", cwd, FONT_BLANC_PATH, cwd, EJML_SIMPLE, cwd, EJML_CORE, cwd, EJML_DDENSE, cwd, COMMONS_LANG);
         options[0].optionString = classpath;
         options[1].optionString = "-verbose:jni";
         memset(&vm_args, 0, sizeof(vm_args));
@@ -61,21 +65,24 @@ int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
     }
 }
 
-bool FB_exists() {
+bool FB_exists(char *cwd) {
     FILE* fb;
     char full_path[MAX_DATA];
-    sprintf(full_path, "%s/%s.class", FONT_BLANC_PATH, FONT_BLANC);
+    sprintf(full_path, "%s/%s/%s.class", cwd, FONT_BLANC_PATH, FONT_BLANC);
     if((fb = fopen(full_path, "r"))) {
         fclose(fb);
         return true;
     }
-    printf("No encryption device found at '%s/%s'\n", FONT_BLANC_PATH, FONT_BLANC);
+    printf("No encryption device found at '%s/%s/%s'\n", cwd, FONT_BLANC_PATH, FONT_BLANC);
     return false;
 }
 
-bool check_log() {
+bool check_log(char *cwd) {
+    char log_path[256];
+    int log_path_len = strlen(cwd) + strlen(FONT_BLANC_LOG) + 1;
+    snprintf(log_path, log_path_len, "%s/%s", cwd, FONT_BLANC_LOG);
     FILE* log;
-    if((log = fopen(FONT_BLANC_LOG, "r"))) {
+    if((log = fopen(log_path, "r"))) {
         char ch;
         while((ch = fgetc(log)) != EOF) {
             printf("%c", ch);

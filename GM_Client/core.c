@@ -143,7 +143,7 @@ void file_recv(char* file_name) {
         remove(absolute_path);
     } else {
         printf("%s\n", "Decryption failed.");
-        check_log();
+        check_log(cwd);
     }
 }
 

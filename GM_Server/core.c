@@ -182,7 +182,7 @@ bool send_file(char* args_input) {
             send(client_sock_PI, file_name, strlen(file_name), 0);
         } else {
             printf("%s\n", "Encryption failure.");
-            check_log();
+            check_log(cwd);
             free(file_name);
             return false;
         }

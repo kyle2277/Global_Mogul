@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "client_sockets.h"
 #include "client_auth.h"
 #include "core.h"
+#include "../JNI/jni_encryption.h"
 
 #define ERROR -1
 #define BUFFER 1024
+#define HOST client
 
 //todo clean up global variables
 
@@ -49,12 +52,14 @@ void terminate(char* message) {
 }
 
 int main(int argc, char *argv[]) {
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
     int sockaddr_len = sizeof(struct sockaddr_in);
     init_sockets(argv);
 
     connect_PI(sockaddr_len);
     send_auth();
-    if(!JNI_init()) {
+    if(!JNI_init(cwd)) {
         printf("%s\n", "JVM failure.");
         exit(0);
     }
