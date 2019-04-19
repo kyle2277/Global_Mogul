@@ -137,7 +137,7 @@ void file_recv(char* file_name) {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
     free(file_bytes);
-    if(JNI_encrypt(decrypt_path, pass, "decrypt")) {
+    if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
         printf("%s\n", "Decryption successful.");
         // Delete encrypted file
         remove(absolute_path);

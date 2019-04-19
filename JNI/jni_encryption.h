@@ -7,7 +7,7 @@
 
 typedef enum { false, true } bool;
 bool JNI_init(char *cwd);
-int JNI_encrypt(char *file_path, char *encryptKey, char *encrypt);
+int JNI_encrypt(char *file_path, char *encryptKey, char *encrypt, char *cwd);
 bool FB_exists(char *cwd);
 bool check_log(char *cwd);
 void JNI_end();

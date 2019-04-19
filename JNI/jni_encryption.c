@@ -45,11 +45,11 @@ bool JNI_init(char *cwd) {
     }
 }
 
-int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
+int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt, char *cwd) {
     cls = (*env)->FindClass(env, "FontBlancMain");
     jint num = 0;
     if(cls != 0) {
-        mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
+        mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
         if(mid != 0) {
             const char *file_path_const = full_path;
             const char *encode_key_const = encryptKey;
@@ -57,7 +57,8 @@ int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt) {
             jstring file_path = (*env)->NewStringUTF(env, file_path_const);
             jstring encodeKey = (*env)->NewStringUTF(env, encode_key_const);
             jstring encrypt_command = (*env)->NewStringUTF(env, encrypt_const);
-            num = (*env)->CallStaticIntMethod(env, cls, mid, file_path, encodeKey, encrypt_command);
+            jstring cwd_str = (*env)->NewStringUTF(env, cwd);
+            num = (*env)->CallStaticIntMethod(env, cls, mid, file_path, encodeKey, encrypt_command, cwd);
             //(*jvm)->DestroyJavaVM(jvm);
             printf("%d\n", num);
             return (int) num;
