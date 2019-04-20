@@ -10,7 +10,6 @@
 
 #define ERROR -1
 #define BUFFER 1024
-#define HOST client
 
 //todo clean up global variables
 

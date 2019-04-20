@@ -54,7 +54,7 @@ void serial_recv() {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
-char* check_input(char* input) {
+char* check_input() {
     char send_server[BUFFER] = "args ok?";
     char* receive = malloc(BUFFER);
     send(sock_PI, send_server, strlen(send_server), 0);
@@ -89,8 +89,7 @@ void check_output() {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
     char absolute_output[BUFFER];
-    int path_len = strlen(cwd) + strlen(OUTPUT);
-    snprintf(absolute_output, path_len, "%s/%s", cwd, OUTPUT);
+    sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
     mkdir(absolute_output, S_IRWXU);
 }
 
@@ -155,9 +154,11 @@ bool dispatch(char* input) {
     } else if(strstr(input, "HELP")) {
         serial_recv();
     } else if(strstr(input, "RETR")) {
-        char* file_name = check_input(input);
+        char* file_name = check_input();
         if(file_name) {
             file_recv(file_name);
+        } else {
+            printf("%s\n", "args not ok.");
         }
         // freeing memory of path variable
         free(file_name);

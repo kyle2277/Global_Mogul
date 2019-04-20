@@ -172,7 +172,7 @@ bool send_file(char* args_input) {
     print_reply(receive);
     if(file_name && file_available(file_name)) {
         sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
-        if(JNI_encrypt(absolute_path, pass, "encrypt")) {
+        if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
             sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
             char success[MAX_DATA] = "200";
             send(client_sock_PI, success, strlen(success), 0);

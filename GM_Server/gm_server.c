@@ -12,7 +12,6 @@
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
-#define HOST server
 
 // TODO add termination function that can exit both client and server at any time
 

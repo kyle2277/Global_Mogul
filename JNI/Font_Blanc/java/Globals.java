@@ -25,7 +25,8 @@ public class Globals {
    // file type of encrypted file
    public static final String encrypted_ext = ".txt";
    // path to log file
-   public static final String log_name = "../log.txt";
+   //public static final String log_name = "../JNI/Font_Blanc/log.txt";
+   public static final String log_name = "../JNI/Font_Blanc/log.txt";
    
    public Globals(String file_input, String encodeKey, String EorD, String cwd) {
       this.e = new EncoderDecoder_FB(encodeKey);

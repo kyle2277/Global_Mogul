@@ -32,6 +32,7 @@ public class FontBlancMain {
       }
 	}
    
+   // used for testing JNI integration
    public static int num(String one) {
       File f = new File(one);
       if(f.exists()) {
