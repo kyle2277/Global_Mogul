@@ -40,16 +40,6 @@ void command_loop() {
     shutdown(sock_DTP, SHUT_RDWR);
 }
 
-/*
- * UNUSED
- */
-void terminate(char* message) {
-    perror(message);
-    printf("%s\n", "Terminating process.");
-    command_loop();
-    exit(-1);
-}
-
 int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));

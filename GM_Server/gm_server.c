@@ -13,8 +13,6 @@
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
 
-// TODO add termination function that can exit both client and server at any time
-
 void command_loop() {
     char receive[MAX_DATA];
     bool run = true;
@@ -68,17 +66,6 @@ void command_loop() {
     }
 }
 
-/*
- * UNUSED
-*/
-void terminate(char* message) {
-    perror(message);
-    printf("%s\n", "Terminating process.");
-    command_loop();
-    exit(-1);
-}
-
-
 int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
@@ -87,7 +74,6 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in client_PI;
     struct sockaddr_in client_DTP;
     int sockaddr_len = sizeof(struct sockaddr_in);
-
     init_sockets(argv, sockaddr_len, server_PI, server_DTP);
     listen_PI();
     listen_DTP();
