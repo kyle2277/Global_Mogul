@@ -27,10 +27,10 @@ void set_pass(char input[]) {
  * Accepts user credentials from console and sends to server via PI connection
  */
 void send_auth() {
-    char input[BUFFER]; // stores user input
+    char input[256]; // stores user input
     char auth_reply[BUFFER]; // stores server response
     printf("[332] Authorization required.\nUSER <username>\nPASS <encryption key>\n");
-    fgets(input, BUFFER, stdin);
+    fgets(input, 256, stdin);
     send(sock_PI, input, strlen(input), 0);
     int reply_len;
     reply_len = recv(sock_PI, auth_reply, BUFFER, 0);

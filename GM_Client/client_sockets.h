@@ -11,7 +11,7 @@ struct sockaddr_in remote_server_DTP;
 int sock_PI; // socket descriptor for the client Process Interpreter (PI) socket
 int sock_DTP; // socket descriptor for the client Data Transfer Process (STP) socket
 
-void init_sockets(char* argv[]);
+void init_sockets(char *argv[]);
 void connect_PI(int sockaddr_len);
 void connect_DTP(int sockaddr_len);
 

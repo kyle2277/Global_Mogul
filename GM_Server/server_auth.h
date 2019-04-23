@@ -19,7 +19,7 @@ char pass[MAX_DATA];
 
 void clean(char type[], char cred[]);
 bool is_valid_user(char args[]);
-void submit_auth(char* args[]);
+void submit_auth(char *args[]);
 void get_auth();
 
 #endif //GM_SERVER_AUTHORIZE_H

@@ -47,7 +47,7 @@ void submit_auth(char* args[]) {
                 send(client_sock_PI, response, strlen(response), 0);
             }
         } else {
-            char response[MAX_DATA];
+            char response[256];
             sprintf(response, "[530] User %s does not exist", args[1]);
             send(client_sock_PI, response, strlen(response), 0);
             clean("Username", access_path);
@@ -92,7 +92,8 @@ void get_auth() {
                 token_count++;
                 token = strtok(NULL, delim);
                 if (token_count > max_args) {
-                    send(client_sock_PI, "[500] Too many args", MAX_DATA, 0);
+                    char *send_client = "[500] Too many args";
+                    send(client_sock_PI, send_client, strlen(send_client), 0);
                     clean("Username", access_path);
                     clean("Password", pass);
                     skip = true;
@@ -105,7 +106,8 @@ void get_auth() {
             }
             if(!skip) {
                 if (token_count < max_args) {
-                    send(client_sock_PI, "[500] Too few args", MAX_DATA, 0);
+                    char *send_client = "[500] Too few args";
+                    send(client_sock_PI, send_client, strlen(send_client), 0);
                     clean("Username", access_path);
                     clean("Password", pass);
                     get_auth();
