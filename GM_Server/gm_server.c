@@ -12,7 +12,6 @@
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
 
-
 void command_loop(char *cwd) {
     char receive[MAX_DATA];
     bool run = true;
@@ -22,7 +21,7 @@ void command_loop(char *cwd) {
         data_len = recv(client_sock_PI, receive, MAX_DATA, 0);
         receive[data_len] = '\0';
         if(strstr(receive, "QUIT")) {
-            char send_client[MAX_DATA] = "Client disconnected.";
+            char *send_client = "Client disconnected.";
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             clean("Username", access_path);
@@ -31,34 +30,34 @@ void command_loop(char *cwd) {
             shutdown(client_sock_DTP, SHUT_RDWR);
             run = false;
         } else if(strstr(receive, "ECHO")) {
-            char send_client[MAX_DATA] = "Entering ECHO";
+            char *send_client = "Entering ECHO";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client) , 0);
             echo_loop();
         } else if(strstr(receive, "LIST")) {
-            char send_client[MAX_DATA] = "Sending list";
+            char *send_client = "Sending list";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // list available files
             list("LIST");
         } else if(strstr(receive, "HELP")) {
-            char send_client[MAX_DATA] = "Help list";
+            char *send_client = "Help list";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // help list
             list("HELP");
         } else if(strstr(receive, "RETR")) {
-            char send_client[MAX_DATA] = "Retrieve";
+            char *send_client = "Retrieve";
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             // send file
             send_file(receive, cwd);
         } else if(strstr(receive, "NOOP")) {
-                char send_client[MAX_DATA] = "[200] command OK";
+                char *send_client = "[200] command OK";
                 printf("%s\n", send_client);
                 send(client_sock_PI, send_client, strlen(send_client), 0);
         } else {
-            char send_client[MAX_DATA] = "[500] syntax error, command unrecognized";
+            char *send_client = "[500] syntax error, command unrecognized";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
         }

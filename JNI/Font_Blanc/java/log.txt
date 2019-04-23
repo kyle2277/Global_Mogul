@@ -1,0 +1,9 @@
+ 
+2019-04-19 18:13:53.873
+Fatal error:
+Input file "/home/kylej/Documents/Kyle/Dev/ProjectGM/Global_Mogul/GM_Server/user/vtec1.txt" not found
+
+2019-04-19 18:19:56.015
+Fatal error:
+Input file "/home/kylej/Documents/Kyle/Dev/ProjectGM/Global_Mogul/GM_Server/user/vtec1.txt" not found
+

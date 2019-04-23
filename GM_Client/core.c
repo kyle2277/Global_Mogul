@@ -23,7 +23,7 @@ void echo_loop() {
     while(run) {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
-        char* quit = strstr(input, "QUIT");
+        char *quit = strstr(input, "QUIT");
         send(sock_PI, input, strlen(input), 0);
         // check if the user wants to terminate the program
         if(quit) {
@@ -38,9 +38,9 @@ void echo_loop() {
 void serial_recv() {
     int reply_len;
     char receive[BUFFER]; // stores server response
-    char received[BUFFER] = "200"; // confirmation to server when data packet received
+    char *received = "200"; // confirmation to server when data packet received
     // lets server know data port is ready to receive data
-    char data_ready[BUFFER] = "DTP ready";
+    char *data_ready = "DTP ready";
     send(sock_DTP, data_ready, strlen(data_ready), 0);
     reply_len = recv(sock_DTP, receive, BUFFER, 0);
     do {
@@ -49,19 +49,19 @@ void serial_recv() {
         send(sock_DTP, received, strlen(received), 0);
         reply_len = recv(sock_DTP, receive, BUFFER, 0);
     } while (!strstr(receive, "end"));
-    char confirm_end[BUFFER] = "end received";
+    char *confirm_end = "end received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
 char* check_input() {
-    char send_server[BUFFER] = "args ok?";
-    char* receive = malloc(BUFFER);
+    char send_server[256] = "args ok?";
+    char *receive = malloc(BUFFER);
     send(sock_PI, send_server, strlen(send_server), 0);
     int reply_len = recv(sock_PI, receive, BUFFER, 0);
     receive[reply_len] = '\0';
     if (strstr(receive, "200")) {
         //success, get file name
-        char send_server[BUFFER] = "file name";
+        snprintf(send_server, strlen("file name"), "%s", "file name");
         send(sock_PI, send_server, strlen(send_server), 0);
         reply_len = recv(sock_PI, receive, BUFFER, 0);
         receive[reply_len] = '\0';
@@ -77,7 +77,7 @@ char* check_input() {
 
 int get_file_len() {
     char length[BUFFER];
-    char data_ready[BUFFER] = "File length";
+    char *data_ready = "File length";
     send(sock_PI, data_ready, strlen(data_ready), 0);
     int reply_len = recv(sock_PI, length, BUFFER, 0);
     length[reply_len] = '\0';
@@ -94,9 +94,9 @@ bool can_write(char* file_name, char* decrypt_path) {
     FILE* f;
     if((f = fopen(decrypt_path, "r"))) {
         fclose(f);
-        char user_input[BUFFER];
+        char user_input[4];
         printf("File %s already exists.\nWould you like to overwrite it? [y/n]\n", file_name);
-        fgets(user_input, BUFFER, stdin);
+        fgets(user_input, 4, stdin);
         if(strstr(user_input, "y") || strstr(user_input, "Y")) {
             remove(decrypt_path);
             return true;
@@ -159,7 +159,7 @@ bool dispatch(char* input, char *cwd) {
         if(file_name) {
             file_recv(file_name, cwd);
         } else {
-            printf("%s\n", "args not ok.");
+            printf("%s\n", "Insufficient arguments.");
         }
         // freeing memory of path variable
         free(file_name);
