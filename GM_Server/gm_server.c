@@ -6,14 +6,14 @@
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
-#include "../JNI/jni_encryption.h"
 
 // pre-processor definitions
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
 
-void command_loop() {
+
+void command_loop(char *cwd) {
     char receive[MAX_DATA];
     bool run = true;
     int data_len;
@@ -52,7 +52,7 @@ void command_loop() {
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             // send file
-            send_file(receive);
+            send_file(receive, cwd);
         } else if(strstr(receive, "NOOP")) {
                 char send_client[MAX_DATA] = "[200] command OK";
                 printf("%s\n", send_client);
@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
     listen_DTP();
 
     while(true) {
+        printf("%s\n", "Waiting for client connection ...");
         connect_PI(sockaddr_len, client_PI);
         get_auth();
         if(!JNI_init(cwd)) {
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
         }
         connect_DTP(sockaddr_len, client_DTP);
         printf("Listening.\n");
-        command_loop();
+        command_loop(cwd);
         JNI_end();
     }
 

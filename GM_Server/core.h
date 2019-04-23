@@ -17,7 +17,7 @@ long get_file_size(char* path);
 char* split_args(char* receive);
 bool file_available(char* path);
 void print_reply(char* receive);
-bool send_file(char* args_input);
+bool send_file(char* args_input, char *cwd);
 
 
 #endif //GM_SERVER_CORE_H

@@ -5,7 +5,10 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "server_auth.h"
+#include "../JNI/jni_encryption.h"
 
+//TODO adapt for cross-platform uses
+//TODO char variable sizes
 
 #define MAX_DATA 1024
 #define ENCRYPTED_TAG "encrypted_"
@@ -161,12 +164,11 @@ void print_reply(char* receive) {
     printf("%s\n", receive);
 }
 
-bool send_file(char* args_input) {
+bool send_file(char* args_input, char *cwd) {
     char* file_name = split_args(args_input);
     char receive[MAX_DATA];
     int reply_len;
-    char cwd[256];
-    getcwd(cwd, sizeof(cwd));
+
     char absolute_path[256];
     char encrypted_path[MAX_DATA];
     print_reply(receive);
@@ -187,7 +189,7 @@ bool send_file(char* args_input) {
             return false;
         }
     } else {
-        char error[MAX_DATA] = "Too many or too few args";
+        char error[MAX_DATA] = "Insufficient arguments or File not found.";
         send(client_sock_PI, error, strlen(error), 0);
         free(file_name);
         return false;

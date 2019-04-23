@@ -6,14 +6,13 @@
 #include "client_sockets.h"
 #include "client_auth.h"
 #include "core.h"
-#include "../JNI/jni_encryption.h"
 
 #define ERROR -1
 #define BUFFER 1024
 
 //todo clean up global variables
 
-void command_loop() {
+void command_loop(char *cwd) {
     char input[BUFFER];
     char response[BUFFER];
     int response_len;
@@ -32,7 +31,7 @@ void command_loop() {
         response_len = recv(sock_PI, response, BUFFER, 0);
         response[response_len] = '\0';
         printf("%s\n", response);
-        run = dispatch(input);
+        run = dispatch(input, cwd);
         memset(input, '\0', BUFFER);
     }
     clean_pass();
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
     connect_DTP(sockaddr_len);
-    command_loop();
+    command_loop(cwd);
     JNI_end();
     return 0;
 }

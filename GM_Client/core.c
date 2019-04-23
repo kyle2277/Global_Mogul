@@ -6,10 +6,9 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include "core.h"
+#include "../JNI/jni_encryption.h"
 #include "client_sockets.h"
 #include "client_auth.h"
-
 
 #define OUTPUT "output"
 #define ENCRYPTED_TAG "encrypted_"
@@ -85,9 +84,7 @@ int get_file_len() {
     return (int) *length;
 }
 
-void check_output() {
-    char cwd[256];
-    getcwd(cwd, sizeof(cwd));
+void check_output(char *cwd) {
     char absolute_output[BUFFER];
     sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
     mkdir(absolute_output, S_IRWXU);
@@ -111,42 +108,46 @@ bool can_write(char* file_name, char* decrypt_path) {
     return true;
 }
 
-void file_recv(char* file_name) {
-
-    // write to file using a byte array;
-    // data port ready to receive bytes
-    int file_len = get_file_len();
-    char* file_bytes = malloc(file_len);
-    //char data_ready[BUFFER] = "DTP ready";
-    //send(sock_DTP, data_ready, strlen(data_ready), 0);
-    recv(sock_DTP, file_bytes, file_len, 0);
-    char cwd[256];
-    getcwd(cwd, sizeof(cwd));
+void file_recv(char* file_name, char *cwd) {
     char decrypt_path[BUFFER];
     sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
-    char absolute_path[BUFFER];
-    sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
-    check_output();
     if(can_write(file_name, decrypt_path)) {
+        printf("%s\n", "Receiving data ...");
+        // write to file using a byte array;
+        // data port ready to receive bytes
+        int file_len = get_file_len();
+        char* file_bytes = malloc(file_len);
+        // receive the file from the server
+        recv(sock_DTP, file_bytes, file_len, 0);
+        //confirm file received
+        char confirm_end[BUFFER] = "[200] file received";
+        send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+        printf("%s\n", confirm_end);
+        printf("%s\n", "Processing file ...");
+        char absolute_path[BUFFER];
+        sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+        check_output(cwd);
         FILE* out = fopen(absolute_path, "w");
         fwrite(file_bytes, 1, file_len, out);
         fclose(out);
-    }
-    char confirm_end[BUFFER] = "[200] end received";
-    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
-    printf("%s\n", confirm_end);
-    free(file_bytes);
-    if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
-        printf("%s\n", "Decryption successful.");
-        // Delete encrypted file
-        remove(absolute_path);
+        // decryption process
+        printf("%s\n", "Decrypting file ...");
+        if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
+            printf("%s\n", "Decryption successful.");
+            // Delete encrypted file
+            remove(absolute_path);
+        } else {
+            printf("%s\n", "Decryption failed.");
+            check_log(cwd);
+        }
+        free(file_bytes);
     } else {
-        printf("%s\n", "Decryption failed.");
-        check_log(cwd);
+        printf("%s\n", "Process terminated.");
     }
+
 }
 
-bool dispatch(char* input) {
+bool dispatch(char* input, char *cwd) {
     if(strstr(input, "ECHO")) {
         echo_loop();
     } else if(strstr(input, "LIST")) {
@@ -156,7 +157,7 @@ bool dispatch(char* input) {
     } else if(strstr(input, "RETR")) {
         char* file_name = check_input();
         if(file_name) {
-            file_recv(file_name);
+            file_recv(file_name, cwd);
         } else {
             printf("%s\n", "args not ok.");
         }
