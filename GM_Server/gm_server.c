@@ -2,6 +2,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "server_auth.h"
 #include "server_sockets.h"
 #include "core.h"
@@ -11,9 +12,8 @@
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
 
-// TODO add termination function that can exit both client and server at any time
 
-void command_loop() {
+void command_loop(char *cwd) {
     char receive[MAX_DATA];
     bool run = true;
     int data_len;
@@ -22,7 +22,7 @@ void command_loop() {
         data_len = recv(client_sock_PI, receive, MAX_DATA, 0);
         receive[data_len] = '\0';
         if(strstr(receive, "QUIT")) {
-            char send_client[MAX_DATA] = "Client disconnected";
+            char send_client[MAX_DATA] = "Client disconnected.";
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             clean("Username", access_path);
@@ -52,7 +52,7 @@ void command_loop() {
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             // send file
-            send_file(receive);
+            send_file(receive, cwd);
         } else if(strstr(receive, "NOOP")) {
                 char send_client[MAX_DATA] = "[200] command OK";
                 printf("%s\n", send_client);
@@ -66,34 +66,32 @@ void command_loop() {
     }
 }
 
-/*
- * UNUSED
- */
-void terminate(char* message) {
-    perror(message);
-    printf("%s\n", "Terminating process");
-    command_loop();
-    exit(-1);
-}
-
 int main(int argc, char *argv[]) {
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
     struct sockaddr_in server_PI;
     struct sockaddr_in server_DTP;
     struct sockaddr_in client_PI;
     struct sockaddr_in client_DTP;
     int sockaddr_len = sizeof(struct sockaddr_in);
-
     init_sockets(argv, sockaddr_len, server_PI, server_DTP);
     listen_PI();
     listen_DTP();
 
     while(true) {
+        printf("%s\n", "Waiting for client connection ...");
         connect_PI(sockaddr_len, client_PI);
         get_auth();
+        if(!JNI_init(cwd)) {
+            printf("%s\n", "JVM failure.");
+            exit(0);
+        }
         connect_DTP(sockaddr_len, client_DTP);
-//        printf("Listening.\n");
-        command_loop();
+        printf("Listening.\n");
+        command_loop(cwd);
+        JNI_end();
     }
+
 }
 
 /* POINTERS

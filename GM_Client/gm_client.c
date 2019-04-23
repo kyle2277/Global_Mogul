@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "client_sockets.h"
 #include "client_auth.h"
 #include "core.h"
@@ -11,7 +12,7 @@
 
 //todo clean up global variables
 
-void command_loop() {
+void command_loop(char *cwd) {
     char input[BUFFER];
     char response[BUFFER];
     int response_len;
@@ -30,7 +31,7 @@ void command_loop() {
         response_len = recv(sock_PI, response, BUFFER, 0);
         response[response_len] = '\0';
         printf("%s\n", response);
-        run = dispatch(input);
+        run = dispatch(input, cwd);
         memset(input, '\0', BUFFER);
     }
     clean_pass();
@@ -38,23 +39,21 @@ void command_loop() {
     shutdown(sock_DTP, SHUT_RDWR);
 }
 
-/*
- * UNUSED
- */
-void terminate(char* message) {
-    perror(message);
-    printf("%s\n", "Terminating process");
-    command_loop();
-    exit(-1);
-}
-
 int main(int argc, char *argv[]) {
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
     int sockaddr_len = sizeof(struct sockaddr_in);
     init_sockets(argv);
+
     connect_PI(sockaddr_len);
     send_auth();
+    if(!JNI_init(cwd)) {
+        printf("%s\n", "JVM failure.");
+        exit(0);
+    }
     connect_DTP(sockaddr_len);
-    command_loop();
+    command_loop(cwd);
+    JNI_end();
     return 0;
 }
 

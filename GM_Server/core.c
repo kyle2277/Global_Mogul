@@ -3,10 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <unistd.h>
 #include "server_auth.h"
+#include "../JNI/jni_encryption.h"
+
+//TODO adapt for cross-platform uses
+//TODO char variable sizes
 
 #define MAX_DATA 1024
-#define ENCRYPTED_TAG "encrytped_"
+#define ENCRYPTED_TAG "encrypted_"
+#define ENCRYPTED_EXT ".txt"
 
  /*
  * receives data from client on PI channel and echoes data back on DTP channel.
@@ -56,19 +62,22 @@ void dir_list() {
     }
     char end[MAX_DATA] = "end";
     send(client_sock_DTP, end, strlen(end), 0);
-    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
     printf("%s\n", receive);
     closedir(dir);
 }
 
 void help_list() {
     char receive[MAX_DATA];
-    char send_client[MAX_DATA] = "this is the list";
+    char send_client[MAX_DATA] = "Commands:\nECHO - echoes input\nLIST - lists retrievable files\n"
+                                 "RETR <file name> - retrieve file\nNOOP - check connection\nHELP - help list\nQUIT - exit";
     send(client_sock_DTP, send_client, strlen(send_client), 0);
     recv(client_sock_DTP, receive, MAX_DATA, 0);
     char end[MAX_DATA] = "end";
     send(client_sock_DTP, end, strlen(end), 0);
-    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
     printf("%s\n", receive);
 }
 
@@ -84,7 +93,7 @@ void list(char* list_type) {
         recv(client_sock_DTP, receive, MAX_DATA, 0);
         dir_list();
     } else if(strstr(list_type, "HELP")) {
-        char send_client[MAX_DATA] = "[200] HELP";
+        char send_client[MAX_DATA] = "[200] HELP\n";
         send(client_sock_DTP, send_client, strlen(send_client), 0);
         recv(client_sock_DTP, receive, MAX_DATA, 0);
         help_list();
@@ -155,31 +164,41 @@ void print_reply(char* receive) {
     printf("%s\n", receive);
 }
 
-bool send_file(char* args_input) {
+bool send_file(char* args_input, char *cwd) {
     char* file_name = split_args(args_input);
     char receive[MAX_DATA];
     int reply_len;
-    char full_path[MAX_DATA];
+
+    char absolute_path[256];
+    char encrypted_path[MAX_DATA];
     print_reply(receive);
     if(file_name && file_available(file_name)) {
-        sprintf(full_path, "./%s/%s", access_path, file_name);
-        char success[MAX_DATA] = "200";
-        send(client_sock_PI, success, strlen(success), 0);
-        reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
-        receive[reply_len] = '\0';
-        //send file_name to client
-        send(client_sock_PI, file_name, strlen(file_name), 0);
+        sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
+        if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
+            sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+            char success[MAX_DATA] = "200";
+            send(client_sock_PI, success, strlen(success), 0);
+            reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
+            receive[reply_len] = '\0';
+            //send file_name to client
+            send(client_sock_PI, file_name, strlen(file_name), 0);
+        } else {
+            printf("%s\n", "Encryption failure.");
+            check_log(cwd);
+            free(file_name);
+            return false;
+        }
     } else {
-        char error[MAX_DATA] = "Too many or too few args";
+        char error[MAX_DATA] = "Insufficient arguments or File not found.";
         send(client_sock_PI, error, strlen(error), 0);
         free(file_name);
         return false;
     }
     //client asks for file length
     print_reply(receive);
-    long file_len = get_file_size(full_path);
+    long file_len = get_file_size(encrypted_path);
     send(client_sock_PI, &file_len, file_len, 0);
-    char* file_bytes = get_bytes(full_path);
+    char* file_bytes = get_bytes(encrypted_path);
     send(client_sock_DTP, file_bytes, file_len, 0);
     reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
@@ -189,6 +208,9 @@ bool send_file(char* args_input) {
     } else {
         printf("%s\n", "file transfer failure");
     }
+    // Delete encrypted file
+    remove(encrypted_path);
+    free(file_name);
     free(file_bytes);
     return true;
 }
