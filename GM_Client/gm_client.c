@@ -9,7 +9,9 @@
 
 #define ERROR -1
 #define BUFFER 1024
+#define DEFAULT_PORT "60000"
 
+//TODO argv[0] is the current working directory
 //todo clean up global variables
 
 void command_loop(char *cwd) {
@@ -40,18 +42,22 @@ void command_loop(char *cwd) {
 }
 
 int main(int argc, char *argv[]) {
+    set_server_addr(argv[1]);
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
+    struct sockaddr_in remote_server_PI;
+    struct sockaddr_in remote_server_DTP;
     int sockaddr_len = sizeof(struct sockaddr_in);
-    init_sockets(argv);
+    init_PI_socket(remote_server_PI);
+    init_DTP_socket(remote_server_DTP, DEFAULT_PORT);
 
-    connect_PI(sockaddr_len);
+    connect_PI(sockaddr_len, remote_server_PI);
     send_auth();
     if(!JNI_init(cwd)) {
         printf("%s\n", "JVM failure.");
         exit(0);
     }
-    connect_DTP(sockaddr_len);
+    connect_DTP(sockaddr_len, remote_server_DTP);
     command_loop(cwd);
     JNI_end();
     return 0;

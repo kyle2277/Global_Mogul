@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include "server_auth.h"
+#include "server_sockets.h"
 
 // pre-processor definitions
 #define MAX_DATA 1024

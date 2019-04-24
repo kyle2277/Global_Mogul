@@ -147,6 +147,37 @@ void file_recv(char* file_name, char *cwd) {
 
 }
 
+void test_DTP_connection() {
+    char *send_server = "200";
+    send(sock_DTP, send_server, strlen(send_server), 0);
+    char receive[BUFFER];
+    int len = recv(sock_DTP, receive, BUFFER, 0);
+    receive[len] = '\0';
+    printf("%s\n", receive);
+}
+
+void port() {
+    char *send_server = "delete DTP?";
+    send(sock_PI, send_server, strlen(send_server), 0);
+    char receive[BUFFER];
+    int len = recv(sock_PI, receive, BUFFER, 0);
+    receive[len] = '\0';
+    printf("%s\n", receive);
+    //recieve 200 or error message
+    if(strstr(receive, "200")) {
+        //delete DTP port
+        //ask port number
+        strncpy(send_server, "Port No.?", strlen("Port No.?"));
+        send(sock_PI, send_server, strlen(send_server), 0);
+        printf("%s\n", send_server);
+        len = recv(sock_PI, receive, BUFFER, 0);
+        receive[len] = '\0';
+        printf("%s\n", receive);
+        DTP_port(receive);
+        test_DTP_connection();
+    }
+}
+
 bool dispatch(char* input, char *cwd) {
     if(strstr(input, "ECHO")) {
         echo_loop();
@@ -154,6 +185,8 @@ bool dispatch(char* input, char *cwd) {
         serial_recv();
     } else if(strstr(input, "HELP")) {
         serial_recv();
+    } else if(strstr(input, "PORT")) {
+        //port();
     } else if(strstr(input, "RETR")) {
         char* file_name = check_input();
         if(file_name) {

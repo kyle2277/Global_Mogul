@@ -5,13 +5,15 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "server_auth.h"
+#include "server_sockets.h"
 #include "../JNI/jni_encryption.h"
 
 //TODO adapt for cross-platform uses
 //TODO comments
+//TODO change 'print_reply' to 'print_PI_reply'
 
 #define MAX_DATA 1024
-#define ENCRYPTED_TAG "encrypted_"
+#define ENCRYPTED_TAG "encrytped_"
 #define ENCRYPTED_EXT ".txt"
 
  /*
@@ -126,7 +128,7 @@ char* split_args(char* receive) {
     char* token = strtok(receive, delim);
     int token_count = 0;
     // free later
-    char* file_name = malloc(256);
+    char* argument = malloc(256);
     while (token != NULL) {
         token_count++;
         token = strtok(NULL, delim);
@@ -134,9 +136,9 @@ char* split_args(char* receive) {
             printf("%s\n", "Too many args");
             return NULL;
         } else if (token != NULL) {
-            strncpy(file_name, token, strlen(token));
-            file_name[strlen(token)-1] = '\0';
-            return file_name;
+            strncpy(argument, token, strlen(token));
+            argument[strlen(token)-1] = '\0';
+            return argument;
         }
     }
     if (token_count < max_args) {
@@ -212,4 +214,44 @@ bool send_file(char* args_input, char *cwd) {
     free(file_name);
     free(file_bytes);
     return true;
+}
+
+bool test_DTP_connection() {
+    char receive[MAX_DATA];
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
+    printf("%s\n", receive);
+    if(strstr(receive, "200")) {
+        char *send_client = "200";
+        send(client_sock_DTP, send_client, strlen(send_client), 0);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool port(char *args_input) {
+    //PORT INPUT MUST BE INT
+    char *port_num = split_args(args_input);
+    //receive confirmation to delete DTP port
+    char receive[MAX_DATA];
+    print_reply(receive);
+    if((int) port_num && (int) port_num >= 60000 && (int) port_num <= 65536) {
+        //change to specified port
+        char *send_client = "[200] Delete DTP";
+        send(client_sock_PI, send_client, strlen(send_client), 0);
+        //send client port No.
+        print_reply(receive);
+        strncpy(send_client, port_num, strlen(port_num));
+        send(client_sock_PI, send_client, strlen(send_client), 0);
+        DTP_port(port_num);
+        return test_DTP_connection();
+    } else if ((int) port_num && ((int)port_num < 60000) && ((int)port_num > 65536)){
+        //port number invalid must be between 60000 and 65536
+    } else { //port does not exist
+        char *error = "Insufficient arguments.";
+        send(client_sock_PI, error, strlen(error), 0);
+        free(port_num);
+        return false;
+    }
 }

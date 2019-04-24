@@ -16,5 +16,7 @@ void check_output(char *cwd);
 bool can_write(char *file_name, char *full_path);
 void file_recv(char *path, char *cwd);
 bool dispatch(char *input, char *cwd);
+void port();
+void test_DTP_connection();
 
 #endif //GM_CLIENT_CORE_H

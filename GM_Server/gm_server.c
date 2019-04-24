@@ -11,6 +11,7 @@
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
+#define DEFAULT_PORT "60000"
 
 void command_loop(char *cwd) {
     char receive[MAX_DATA];
@@ -52,6 +53,20 @@ void command_loop(char *cwd) {
             printf("%s\n", send_client);
             // send file
             send_file(receive, cwd);
+        } else if(strstr(receive, "PORT")) {
+            // set data transfer port to the specified number
+            // must be greater than 60000 and less than 65536
+            char *send_client = "Set Data Transfer Port";
+            send(client_sock_PI, send_client, strlen(send_client), 0);
+            printf("%s\n", send_client);
+            // switch port
+            if(port(receive)) {
+                //port assignment success
+                printf("%s\n", "Port assignment success.");
+            } else {
+                // port assignment failure
+                printf("%s\n", "Port assignment failure.");
+            }
         } else if(strstr(receive, "NOOP")) {
                 char *send_client = "[200] command OK";
                 printf("%s\n", send_client);
@@ -73,7 +88,8 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in client_PI;
     struct sockaddr_in client_DTP;
     int sockaddr_len = sizeof(struct sockaddr_in);
-    init_sockets(argv, sockaddr_len, server_PI, server_DTP);
+    init_PI_socket(sockaddr_len, server_PI);
+    init_DTP_socket(sockaddr_len, server_DTP, DEFAULT_PORT);
     listen_PI();
     listen_DTP();
 
