@@ -7,6 +7,11 @@
 #define MAX_DATA 1024
 
 #include "../JNI/jni_encryption.h"
+//change location of these varibles
+struct sockaddr_in server_PI;
+struct sockaddr_in server_DTP;
+struct sockaddr_in client_PI;
+struct sockaddr_in client_DTP;
 
 void echo_loop();
 void dir_list();

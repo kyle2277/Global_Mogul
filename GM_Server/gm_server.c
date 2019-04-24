@@ -83,25 +83,21 @@ void command_loop(char *cwd) {
 int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    struct sockaddr_in server_PI;
-    struct sockaddr_in server_DTP;
-    struct sockaddr_in client_PI;
-    struct sockaddr_in client_DTP;
-    int sockaddr_len = sizeof(struct sockaddr_in);
-    init_PI_socket(sockaddr_len, server_PI);
-    init_DTP_socket(sockaddr_len, server_DTP, DEFAULT_PORT);
+    sockaddr_len = sizeof(struct sockaddr_in);
+    init_PI_socket();
+    init_DTP_socket(DEFAULT_PORT);
     listen_PI();
     listen_DTP();
 
     while(true) {
         printf("%s\n", "Waiting for client connection ...");
-        connect_PI(sockaddr_len, client_PI);
+        connect_PI();
         get_auth();
         if(!JNI_init(cwd)) {
             printf("%s\n", "JVM failure.");
             exit(0);
         }
-        connect_DTP(sockaddr_len, client_DTP);
+        connect_DTP();
         printf("Listening.\n");
         command_loop(cwd);
         JNI_end();

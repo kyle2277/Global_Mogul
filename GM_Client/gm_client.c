@@ -45,19 +45,17 @@ int main(int argc, char *argv[]) {
     set_server_addr(argv[1]);
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    struct sockaddr_in remote_server_PI;
-    struct sockaddr_in remote_server_DTP;
-    int sockaddr_len = sizeof(struct sockaddr_in);
-    init_PI_socket(remote_server_PI);
-    init_DTP_socket(remote_server_DTP, DEFAULT_PORT);
+    sockaddr_len = sizeof(struct sockaddr_in);
+    init_PI_socket();
+    init_DTP_socket(DEFAULT_PORT);
 
-    connect_PI(sockaddr_len, remote_server_PI);
+    connect_PI();
     send_auth();
     if(!JNI_init(cwd)) {
         printf("%s\n", "JVM failure.");
         exit(0);
     }
-    connect_DTP(sockaddr_len, remote_server_DTP);
+    connect_DTP();
     command_loop(cwd);
     JNI_end();
     return 0;

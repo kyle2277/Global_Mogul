@@ -15,7 +15,7 @@
 /*
  * Initialize all socket descriptors and structures
  */
-void init_PI_socket(struct sockaddr_in remote_server_PI) {
+void init_PI_socket() {
     // protocol set to 0 uses TCP
     if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client PI socket");
@@ -30,7 +30,7 @@ void init_PI_socket(struct sockaddr_in remote_server_PI) {
     bzero(&remote_server_PI.sin_zero, 8);
 }
 
-void init_DTP_socket(struct sockaddr_in remote_server_DTP, char *port) {
+void init_DTP_socket(char *port) {
     if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client DTP socket");
         exit(-1);
@@ -46,7 +46,7 @@ void init_DTP_socket(struct sockaddr_in remote_server_DTP, char *port) {
 /*
  * Connect to server PI port
  */
-void connect_PI(int sockaddr_len, struct sockaddr_in remote_server_PI) {
+void connect_PI() {
     if((connect(sock_PI, (struct sockaddr *)&remote_server_PI, sockaddr_len)) == ERROR) {
         perror("connect to server PI port");
         exit(-1);
@@ -57,7 +57,7 @@ void connect_PI(int sockaddr_len, struct sockaddr_in remote_server_PI) {
 /*
  * Connect to server DTP port
  */
-void connect_DTP(int sockaddr_len, struct sockaddr_in remote_server_DTP) {
+void connect_DTP() {
     if((connect(sock_DTP, (struct sockaddr *)&remote_server_DTP, sockaddr_len)) == ERROR) {
         perror("connect to server DTP port");
         exit(-1);
@@ -71,8 +71,7 @@ void set_server_addr(char *address) {
 
 void DTP_port(char *port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
-    struct sockaddr_in new_remote_DTP;
-    int sockaddr_in_len = sizeof(struct sockaddr_in);
-    init_DTP_socket(new_remote_DTP, port_num);
-    connect_DTP(sockaddr_in_len, new_remote_DTP);
+    bzero(&remote_server_DTP, sizeof(remote_server_DTP));
+    init_DTP_socket(port_num);
+    connect_DTP();
 }

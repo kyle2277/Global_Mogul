@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include "server_auth.h"
 #include "server_sockets.h"
+#include "core.h"
 
 // pre-processor definitions
 #define ERROR -1
@@ -14,7 +14,7 @@
 /*
  * Initialization of all socket descriptors and structures
  */
-void init_PI_socket(int sockaddr_len, struct sockaddr_in server_PI) {
+void init_PI_socket() {
     // create PI socket for server
     //protocol set to 0 uses TCP
     if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
@@ -37,7 +37,7 @@ void init_PI_socket(int sockaddr_len, struct sockaddr_in server_PI) {
 
 }
 
-void init_DTP_socket(int sockaddr_len, struct sockaddr_in server_DTP, char *port) {
+void init_DTP_socket(char *port) {
     // create DTP socket for server
     if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server DTP socket");
@@ -82,7 +82,7 @@ void listen_DTP() {
  * Waiting for PI connection from client. Takes empty client structure, fills it with client info once connected
  * accept() returns new socket descriptor, used to send/receive data from this client
  */
-void connect_PI(int sockaddr_len, struct sockaddr_in client_PI) {
+void connect_PI() {
     if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == ERROR) {
         perror("accept client PI");
         exit(-1);
@@ -96,7 +96,7 @@ void connect_PI(int sockaddr_len, struct sockaddr_in client_PI) {
 /*
  * Waiting for DTP connection from client
  */
-void connect_DTP(int sockaddr_len, struct sockaddr_in client_DTP) {
+void connect_DTP() {
     if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
         perror("accept client DTP");
         exit(-1);
@@ -106,10 +106,9 @@ void connect_DTP(int sockaddr_len, struct sockaddr_in client_DTP) {
 
 void DTP_port(char *port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
-    struct sockaddr_in new_server_DTP;
-    struct sockaddr_in new_client_DTP;
-    int sockaddr_in_len = sizeof(struct sockaddr_in);
-    init_DTP_socket(sockaddr_in_len, new_server_DTP, port_num);
+    bzero(&server_DTP, sizeof(server_DTP));
+    bzero(&client_DTP, sizeof(client_DTP));
+    init_DTP_socket(port_num);
     listen_DTP();
-    connect_DTP(sockaddr_in_len, new_client_DTP);
+    connect_DTP();
 }
