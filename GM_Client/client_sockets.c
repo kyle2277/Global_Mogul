@@ -9,34 +9,37 @@
 
 //TODO switch strncpy for snprintf where applicable
 //TODO switch port number MUST BE INT use strtoI
+//TODO setsockopt
+//TODO consider changing socket commands to read/write
 
 /*
  * Initialize all socket descriptors and structures
  */
 void init_PI_socket(struct sockaddr_in remote_server_PI) {
-    if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+    // protocol set to 0 uses TCP
+    if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client PI socket");
         exit(-1);
     }
 
     //initialize remote server PI values
     remote_server_PI.sin_family = AF_INET;
-    remote_server_PI.sin_port = htons(atoi(DEFAULT_PORT));
     remote_server_PI.sin_addr.s_addr = inet_addr(server_addr);
+    remote_server_PI.sin_port = htons(atoi(DEFAULT_PORT));
     char *net_address = inet_ntoa(remote_server_PI.sin_addr);
     bzero(&remote_server_PI.sin_zero, 8);
 }
 
 void init_DTP_socket(struct sockaddr_in remote_server_DTP, char *port) {
-    if((sock_DTP = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+    if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client DTP socket");
         exit(-1);
     }
 
     //initialize remote server DTP values
     remote_server_DTP.sin_family = AF_INET;
-    remote_server_DTP.sin_port = htons(atoi(port)-1);
     remote_server_DTP.sin_addr.s_addr = inet_addr(server_addr);
+    remote_server_DTP.sin_port = htons(atoi(port)-1);
     bzero(&remote_server_DTP.sin_zero, 8);
 }
 

@@ -16,7 +16,8 @@
  */
 void init_PI_socket(int sockaddr_len, struct sockaddr_in server_PI) {
     // create PI socket for server
-    if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+    //protocol set to 0 uses TCP
+    if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server PI socket");
         exit(-1);
     }
@@ -25,7 +26,7 @@ void init_PI_socket(int sockaddr_len, struct sockaddr_in server_PI) {
     server_PI.sin_family = AF_INET;
     // htons = host byte order to network byte order
     server_PI.sin_port = htons(atoi(DEFAULT_PORT)); // atoi = ascii to integer
-    server_PI.sin_addr.s_addr = INADDR_ANY; // listen on all interfaces on host at specified port sin_port
+    server_PI.sin_addr.s_addr = htonl(INADDR_ANY); // listen on all interfaces on host at specified port sin_port
     bzero(&server_PI.sin_zero, 8);
 
     // bind the server PI socket to the PI port
@@ -38,15 +39,15 @@ void init_PI_socket(int sockaddr_len, struct sockaddr_in server_PI) {
 
 void init_DTP_socket(int sockaddr_len, struct sockaddr_in server_DTP, char *port) {
     // create DTP socket for server
-    if((sock_DTP = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+    if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server DTP socket");
         exit(-1);
     }
 
     //initialize values in server_DTP socket
     server_DTP.sin_family = AF_INET;
-    server_DTP.sin_port = htons(atoi(port-1));
-    server_DTP.sin_addr.s_addr = INADDR_ANY;
+    server_DTP.sin_port = htons(atoi(port)-1);
+    server_DTP.sin_addr.s_addr = htonl(INADDR_ANY);
     bzero(&server_DTP.sin_zero, 8);
 
     //bind the server DTP socket to the DTP port

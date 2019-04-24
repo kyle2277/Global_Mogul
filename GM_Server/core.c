@@ -236,7 +236,7 @@ bool port(char *args_input) {
     //receive confirmation to delete DTP port
     char receive[MAX_DATA];
     print_reply(receive);
-    if((int) port_num && (int) port_num >= 60000 && (int) port_num <= 65536) {
+    if((int) port_num && (int) port_num >= 60000 && (int) port_num <= 65535) {
         //change to specified port
         char *send_client = "[200] Delete DTP";
         send(client_sock_PI, send_client, strlen(send_client), 0);
@@ -246,7 +246,7 @@ bool port(char *args_input) {
         send(client_sock_PI, send_client, strlen(send_client), 0);
         DTP_port(port_num);
         return test_DTP_connection();
-    } else if ((int) port_num && ((int)port_num < 60000) && ((int)port_num > 65536)){
+    } else if ((int) port_num && ((int)port_num < 60000) && ((int)port_num > 65535)){
         //port number invalid must be between 60000 and 65536
     } else { //port does not exist
         char *error = "Insufficient arguments.";
