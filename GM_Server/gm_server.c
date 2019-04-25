@@ -56,7 +56,7 @@ void command_loop(char *cwd) {
         } else if(strstr(receive, "PORT")) {
             // set data transfer port to the specified number
             // must be greater than 60000 and less than 65536
-            char *send_client = "Set Data Transfer Port";
+            char *send_client = "Set Data Transfer Process port";
             send(client_sock_PI, send_client, strlen(send_client), 0);
             printf("%s\n", send_client);
             // switch port

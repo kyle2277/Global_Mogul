@@ -157,7 +157,8 @@ void test_DTP_connection() {
 }
 
 void port() {
-    char *send_server = "delete DTP?";
+    char send_server[256] = "delete DTP?";
+    send_server[strlen(send_server)] = '\0';
     send(sock_PI, send_server, strlen(send_server), 0);
     char receive[BUFFER];
     int len = recv(sock_PI, receive, BUFFER, 0);
@@ -186,7 +187,7 @@ bool dispatch(char* input, char *cwd) {
     } else if(strstr(input, "HELP")) {
         serial_recv();
     } else if(strstr(input, "PORT")) {
-        //port();
+        port();
     } else if(strstr(input, "RETR")) {
         char* file_name = check_input();
         if(file_name) {
