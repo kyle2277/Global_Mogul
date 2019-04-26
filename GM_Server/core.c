@@ -161,7 +161,7 @@ bool file_available(char* file_name) {
     return false;
 }
 
-void print_reply(char* receive) {
+void print_PI_reply(char* receive) {
     int reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
     printf("%s\n", receive);
@@ -173,7 +173,7 @@ bool send_file(char* args_input, char *cwd) {
     int reply_len;
     char absolute_path[MAX_DATA];
     char encrypted_path[MAX_DATA];
-    print_reply(receive);
+    print_PI_reply(receive);
     if(file_name && file_available(file_name)) {
         sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
         if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
@@ -197,7 +197,7 @@ bool send_file(char* args_input, char *cwd) {
         return false;
     }
     //client asks for file length
-    print_reply(receive);
+    print_PI_reply(receive);
     long file_len = get_file_size(encrypted_path);
     char *file_len_str = malloc(sizeof(long));
     sprintf(file_len_str, "%ld", file_len);
@@ -239,7 +239,7 @@ bool port(char *args_input) {
     char *port_num_str = split_args(args_input);
     //receive confirmation to delete DTP port
     char receive[MAX_DATA];
-    print_reply(receive);
+    print_PI_reply(receive);
     char *rest_str[256];
     long port_num = strtol(port_num_str, rest_str, 10);
     if(port_num >= 60000 && port_num <= 65535) {
@@ -248,7 +248,7 @@ bool port(char *args_input) {
         char *send_client = "[200] Delete DTP";
         send(client_sock_PI, send_client, strlen(send_client), 0);
         //send client port No.
-        print_reply(receive);
+        print_PI_reply(receive);
         send(client_sock_PI, port_num_str, strlen(port_num_str), 0);
         DTP_port(port_num_str);
         free(port_num_str);

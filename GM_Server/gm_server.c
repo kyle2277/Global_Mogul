@@ -84,6 +84,10 @@ int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
     sockaddr_len = sizeof(struct sockaddr_in);
+    if(!JNI_init(cwd)) {
+        printf("%s\n", "JVM failure.");
+        exit(0);
+    }
     init_PI_socket();
     init_DTP_socket(DEFAULT_PORT);
     listen_PI();
@@ -93,14 +97,10 @@ int main(int argc, char *argv[]) {
         printf("%s\n", "Waiting for client connection ...");
         connect_PI();
         get_auth();
-        if(!JNI_init(cwd)) {
-            printf("%s\n", "JVM failure.");
-            exit(0);
-        }
         connect_DTP();
         printf("Listening.\n");
         command_loop(cwd);
-        JNI_end();
+        //JNI_end();
     }
 
 }

@@ -11,7 +11,6 @@
 #define BUFFER 1024
 #define DEFAULT_PORT "60000"
 
-//TODO argv[0] is the current cmake directory
 //todo clean up global variables
 
 void command_loop(char *cwd) {
