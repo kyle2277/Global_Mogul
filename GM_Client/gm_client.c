@@ -9,6 +9,7 @@
 
 #define ERROR -1
 #define BUFFER 1024
+#define DEFAULT_PORT "60000"
 
 //todo clean up global variables
 
@@ -40,18 +41,20 @@ void command_loop(char *cwd) {
 }
 
 int main(int argc, char *argv[]) {
+    set_server_addr(argv[1]);
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    int sockaddr_len = sizeof(struct sockaddr_in);
-    init_sockets(argv);
+    sockaddr_len = sizeof(struct sockaddr_in);
+    init_PI_socket();
+    init_DTP_socket(DEFAULT_PORT);
 
-    connect_PI(sockaddr_len);
+    connect_PI();
     send_auth();
     if(!JNI_init(cwd)) {
         printf("%s\n", "JVM failure.");
         exit(0);
     }
-    connect_DTP(sockaddr_len);
+    connect_DTP();
     command_loop(cwd);
     JNI_end();
     return 0;

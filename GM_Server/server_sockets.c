@@ -2,39 +2,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include "server_auth.h"
 #include "server_sockets.h"
+#include "core.h"
 
 // pre-processor definitions
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
+#define DEFAULT_PORT "60000"
 
 /*
  * Initialization of all socket descriptors and structures
  */
-void init_sockets(char *argv[], int sockaddr_len, struct sockaddr_in server_PI, struct sockaddr_in server_DTP) {
-    // create PI and DTP sockets for server
-    if((sock_PI = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
+void init_PI_socket() {
+    // create PI socket for server
+    //protocol set to 0 uses TCP
+    if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server PI socket");
-        exit(-1);
-    }
-    if((sock_DTP = socket(AF_INET, SOCK_STREAM, 0)) == ERROR) {
-        perror("server DTP socket");
         exit(-1);
     }
 
     // initialize values in server_pi socket
     server_PI.sin_family = AF_INET;
     // htons = host byte order to network byte order
-    server_PI.sin_port = htons(atoi(argv[1])); // atoi = ascii to integer
-    server_PI.sin_addr.s_addr = INADDR_ANY; // listen on all interfaces on host at specified port sin_port
+    server_PI.sin_port = htons(atoi(DEFAULT_PORT)); // atoi = ascii to integer
+    server_PI.sin_addr.s_addr = htonl(INADDR_ANY); // listen on all interfaces on host at specified port sin_port
     bzero(&server_PI.sin_zero, 8);
-    //initialize values in server_DTP socket
-    server_DTP.sin_family = AF_INET;
-    server_DTP.sin_port = htons(atoi(argv[1])-1);
-    server_DTP.sin_addr.s_addr = INADDR_ANY;
-    bzero(&server_DTP.sin_zero, 8);
 
     // bind the server PI socket to the PI port
     if((bind(sock_PI, (struct sockaddr *)&server_PI, sockaddr_len)) == ERROR) {
@@ -42,12 +35,28 @@ void init_sockets(char *argv[], int sockaddr_len, struct sockaddr_in server_PI, 
         exit(-1);
     }
 
+}
+
+void init_DTP_socket(char *port) {
+    // create DTP socket for server
+    if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
+        perror("server DTP socket");
+        exit(-1);
+    }
+
+    //initialize values in server_DTP socket
+    server_DTP.sin_family = AF_INET;
+    server_DTP.sin_port = htons(atoi(port)-1);
+    server_DTP.sin_addr.s_addr = htonl(INADDR_ANY);
+    bzero(&server_DTP.sin_zero, 8);
+
     //bind the server DTP socket to the DTP port
     if((bind(sock_DTP, (struct sockaddr *)&server_DTP, sockaddr_len)) == ERROR) {
         perror("binding DTP socket to port");
         exit(-1);
     }
 }
+
 
 /*
  * Instructs kernel to listen on server PI socket
@@ -73,7 +82,7 @@ void listen_DTP() {
  * Waiting for PI connection from client. Takes empty client structure, fills it with client info once connected
  * accept() returns new socket descriptor, used to send/receive data from this client
  */
-void connect_PI(int sockaddr_len, struct sockaddr_in client_PI) {
+void connect_PI() {
     if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == ERROR) {
         perror("accept client PI");
         exit(-1);
@@ -87,10 +96,19 @@ void connect_PI(int sockaddr_len, struct sockaddr_in client_PI) {
 /*
  * Waiting for DTP connection from client
  */
-void connect_DTP(int sockaddr_len, struct sockaddr_in client_DTP) {
+void connect_DTP() {
     if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
         perror("accept client DTP");
         exit(-1);
     }
     printf("client DTP accepted\n");
+}
+
+void DTP_port(char *port_num) {
+    shutdown(sock_DTP, SHUT_RDWR);
+    bzero(&server_DTP, sizeof(server_DTP));
+    bzero(&client_DTP, sizeof(client_DTP));
+    init_DTP_socket(port_num);
+    listen_DTP();
+    connect_DTP();
 }

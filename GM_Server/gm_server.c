@@ -11,6 +11,7 @@
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
+#define DEFAULT_PORT "60000"
 
 void command_loop(char *cwd) {
     char receive[MAX_DATA];
@@ -52,6 +53,20 @@ void command_loop(char *cwd) {
             printf("%s\n", send_client);
             // send file
             send_file(receive, cwd);
+        } else if(strstr(receive, "PORT")) {
+            // set data transfer port to the specified number
+            // must be greater than 60000 and less than 65536
+            char *send_client = "Set Data Transfer Process port";
+            send(client_sock_PI, send_client, strlen(send_client), 0);
+            printf("%s\n", send_client);
+            // switch port
+            if(port(receive)) {
+                //port assignment success
+                printf("%s\n", "Port assignment success.");
+            } else {
+                // port assignment failure
+                printf("%s\n", "Port assignment failure.");
+            }
         } else if(strstr(receive, "NOOP")) {
                 char *send_client = "[200] command OK";
                 printf("%s\n", send_client);
@@ -68,27 +83,24 @@ void command_loop(char *cwd) {
 int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
-    struct sockaddr_in server_PI;
-    struct sockaddr_in server_DTP;
-    struct sockaddr_in client_PI;
-    struct sockaddr_in client_DTP;
-    int sockaddr_len = sizeof(struct sockaddr_in);
-    init_sockets(argv, sockaddr_len, server_PI, server_DTP);
+    sockaddr_len = sizeof(struct sockaddr_in);
+    if(!JNI_init(cwd)) {
+        printf("%s\n", "JVM failure.");
+        exit(0);
+    }
+    init_PI_socket();
+    init_DTP_socket(DEFAULT_PORT);
     listen_PI();
     listen_DTP();
 
     while(true) {
         printf("%s\n", "Waiting for client connection ...");
-        connect_PI(sockaddr_len, client_PI);
+        connect_PI();
         get_auth();
-        if(!JNI_init(cwd)) {
-            printf("%s\n", "JVM failure.");
-            exit(0);
-        }
-        connect_DTP(sockaddr_len, client_DTP);
+        connect_DTP();
         printf("Listening.\n");
         command_loop(cwd);
-        JNI_end();
+        //JNI_end();
     }
 
 }

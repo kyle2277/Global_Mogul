@@ -7,6 +7,11 @@
 #define MAX_DATA 1024
 
 #include "../JNI/jni_encryption.h"
+//change location of these varibles
+struct sockaddr_in server_PI;
+struct sockaddr_in server_DTP;
+struct sockaddr_in client_PI;
+struct sockaddr_in client_DTP;
 
 void echo_loop();
 void dir_list();
@@ -16,8 +21,9 @@ char* get_bytes(char *path);
 long get_file_size(char *path);
 char* split_args(char *receive);
 bool file_available(char *path);
-void print_reply(char *receive);
+void print__PI_reply(char *receive);
 bool send_file(char *args_input, char *cwd);
-
+bool port(char *args_input);
+bool test_DTP_connection();
 
 #endif //GM_SERVER_CORE_H

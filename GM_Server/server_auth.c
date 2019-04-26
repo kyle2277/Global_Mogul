@@ -4,7 +4,10 @@
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include "server_auth.h"
+#include "server_sockets.h"
 
 // pre-processor definitions
 #define MAX_DATA 1024
@@ -12,7 +15,7 @@
 /*
  * Replaces all characters in current credentials with the null string character. Prepares system for new user
  */
-void clean(char type[], char cred[]) {
+void clean(char *type, char *cred) {
     int len = strlen(cred);
     memset(cred, '\0', len);
     printf("%s cleared.\n", type);
@@ -21,18 +24,22 @@ void clean(char type[], char cred[]) {
 /*
  * Check if user directory exists
  */
-bool is_valid_user(char args[]) {
+bool is_valid_user(char *args) {
     bool valid = false;
-    DIR* directory = opendir(args);
-    if(ENOENT != errno) { valid = true; }
-    closedir(directory);
+    mkdir(args, S_IRWXU);
+    if(EEXIST == errno) {
+        valid = true;
+    } else {
+        printf("%s\n", "User does not exist directory.");
+        rmdir(args);
+    }
     return valid;
 }
 
 /*
  * Stores username and password from client input
  */
-void submit_auth(char* args[]) {
+void submit_auth(char *args[]) {
     if(strstr(args[0], "USER")) {
         if(access_path[0] != '\0') { clean("Username", access_path); }
         if(is_valid_user(args[1])) {
@@ -68,6 +75,7 @@ void submit_auth(char* args[]) {
         char* response = "[500] Syntax error";
         send(client_sock_PI, response, strlen(response), 0);
     }
+
 }
 
 /*

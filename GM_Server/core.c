@@ -5,10 +5,13 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "server_auth.h"
+#include "server_sockets.h"
 #include "../JNI/jni_encryption.h"
 
 //TODO adapt for cross-platform uses
 //TODO comments
+//TODO change 'print_reply' to 'print_PI_reply'
+//TODO BUG: User "user" does not exists when second client connects
 
 #define MAX_DATA 1024
 #define ENCRYPTED_TAG "encrypted_"
@@ -126,7 +129,7 @@ char* split_args(char* receive) {
     char* token = strtok(receive, delim);
     int token_count = 0;
     // free later
-    char* file_name = malloc(256);
+    char* argument = malloc(256);
     while (token != NULL) {
         token_count++;
         token = strtok(NULL, delim);
@@ -134,9 +137,9 @@ char* split_args(char* receive) {
             printf("%s\n", "Too many args");
             return NULL;
         } else if (token != NULL) {
-            strncpy(file_name, token, strlen(token));
-            file_name[strlen(token)-1] = '\0';
-            return file_name;
+            strncpy(argument, token, strlen(token));
+            argument[strlen(token)-1] = '\0';
+            return argument;
         }
     }
     if (token_count < max_args) {
@@ -158,7 +161,7 @@ bool file_available(char* file_name) {
     return false;
 }
 
-void print_reply(char* receive) {
+void print_PI_reply(char* receive) {
     int reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
     printf("%s\n", receive);
@@ -170,7 +173,7 @@ bool send_file(char* args_input, char *cwd) {
     int reply_len;
     char absolute_path[MAX_DATA];
     char encrypted_path[MAX_DATA];
-    print_reply(receive);
+    print_PI_reply(receive);
     if(file_name && file_available(file_name)) {
         sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
         if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
@@ -194,10 +197,12 @@ bool send_file(char* args_input, char *cwd) {
         return false;
     }
     //client asks for file length
-    print_reply(receive);
+    print_PI_reply(receive);
     long file_len = get_file_size(encrypted_path);
-    send(client_sock_PI, &file_len, file_len, 0);
-    char* file_bytes = get_bytes(encrypted_path);
+    char *file_len_str = malloc(sizeof(long));
+    sprintf(file_len_str, "%ld", file_len);
+    send(client_sock_PI, file_len_str, strlen(file_len_str), 0);
+    char *file_bytes = get_bytes(encrypted_path);
     send(client_sock_DTP, file_bytes, file_len, 0);
     reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
@@ -209,7 +214,57 @@ bool send_file(char* args_input, char *cwd) {
     }
     // Delete encrypted file
     remove(encrypted_path);
+    free(file_len_str);
     free(file_name);
     free(file_bytes);
     return true;
+}
+
+bool test_DTP_connection() {
+    char receive[MAX_DATA];
+    int len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+    receive[len] = '\0';
+    printf("%s\n", receive);
+    if(strstr(receive, "200")) {
+        char *send_client = "200";
+        send(client_sock_DTP, send_client, strlen(send_client), 0);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool port(char *args_input) {
+    //PORT INPUT MUST BE INT
+    char *port_num_str = split_args(args_input);
+    //receive confirmation to delete DTP port
+    char receive[MAX_DATA];
+    print_PI_reply(receive);
+    char *rest_str[256];
+    long port_num = strtol(port_num_str, rest_str, 10);
+    if(port_num >= 60000 && port_num <= 65535) {
+        //run DTP_port;
+        //change to specified port
+        char *send_client = "[200] Delete DTP";
+        send(client_sock_PI, send_client, strlen(send_client), 0);
+        //send client port No.
+        print_PI_reply(receive);
+        send(client_sock_PI, port_num_str, strlen(port_num_str), 0);
+        DTP_port(port_num_str);
+        free(port_num_str);
+        return test_DTP_connection();
+    } else if(port_num == 0) {
+        // no number argument
+        char *error = "Insufficient arguments.";
+        send(client_sock_PI, error, strlen(error), 0);
+        free(port_num_str);
+        return false;
+    } else {
+        // number outside of range
+        char *error_range = "Port number must be between 60000 and 65535.";
+        send(client_sock_PI, error_range, strlen(error_range), 0);
+        free(port_num_str);
+        return false;
+    }
+
 }

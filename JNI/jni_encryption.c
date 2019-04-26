@@ -31,7 +31,9 @@ bool JNI_init(char *cwd) {
     if(FB_exists(cwd)) {
         JavaVMOption options[2];
         char classpath[MAX_DATA];
-        sprintf(classpath, "-Djava.class.path=%s/%s:%s/%s:%s/%s:%s/%s:%s/%s", cwd, FONT_BLANC_PATH, cwd, EJML_SIMPLE, cwd, EJML_CORE, cwd, EJML_DDENSE, cwd, COMMONS_LANG);
+        sprintf(classpath, "-Djava.class.path=%s/%s%c%s/%s%c%s/%s%c%s/%s%c%s/%s", cwd, FONT_BLANC_PATH, PATH_SEPARATOR,
+                cwd, EJML_SIMPLE, PATH_SEPARATOR, cwd, EJML_CORE, PATH_SEPARATOR, cwd, EJML_DDENSE, PATH_SEPARATOR,
+                cwd, COMMONS_LANG);
         options[0].optionString = classpath;
         options[1].optionString = "-verbose:jni";
         memset(&vm_args, 0, sizeof(vm_args));
