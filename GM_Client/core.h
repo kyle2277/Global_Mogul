@@ -11,7 +11,7 @@
 void echo_loop();
 void serial_recv();
 char* check_input();
-int get_file_len();
+long get_file_len();
 void check_output(char *cwd);
 bool can_write(char *file_name, char *full_path);
 void file_recv(char *path, char *cwd);

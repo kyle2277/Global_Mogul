@@ -75,13 +75,15 @@ char* check_input() {
     }
 }
 
-int get_file_len() {
-    char length[BUFFER];
+long get_file_len() {
+    char length_str[BUFFER];
     char *data_ready = "File length";
     send(sock_PI, data_ready, strlen(data_ready), 0);
-    int reply_len = recv(sock_PI, length, BUFFER, 0);
-    length[reply_len] = '\0';
-    return (int) *length;
+    int reply_len = recv(sock_PI, length_str, BUFFER, 0);
+    length_str[reply_len] = '\0';
+    char *rest_str[256];
+    long length = strtol(length_str, rest_str, 10);
+    return length;
 }
 
 void check_output(char *cwd) {
@@ -111,18 +113,19 @@ bool can_write(char* file_name, char* decrypt_path) {
 void file_recv(char* file_name, char *cwd) {
     char decrypt_path[BUFFER];
     sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
+    printf("%s\n", "Receiving data ...");
+    // write to file using a byte array;
+    // data port ready to receive bytes
+    long file_len = get_file_len();
+    char* file_bytes = malloc(file_len);
+    // receive the file from the server
+    recv(sock_DTP, file_bytes, file_len, 0);
+    //confirm file received
+    char confirm_end[BUFFER] = "[200] file received";
+    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+    printf("%s\n", confirm_end);
     if(can_write(file_name, decrypt_path)) {
-        printf("%s\n", "Receiving data ...");
-        // write to file using a byte array;
-        // data port ready to receive bytes
-        int file_len = get_file_len();
-        char* file_bytes = malloc(file_len);
-        // receive the file from the server
-        recv(sock_DTP, file_bytes, file_len, 0);
-        //confirm file received
-        char confirm_end[BUFFER] = "[200] file received";
-        send(sock_DTP, confirm_end, strlen(confirm_end), 0);
-        printf("%s\n", confirm_end);
+        //save file
         printf("%s\n", "Processing file ...");
         char absolute_path[BUFFER];
         sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
@@ -142,6 +145,8 @@ void file_recv(char* file_name, char *cwd) {
         }
         free(file_bytes);
     } else {
+        //discard file
+        free(file_bytes);
         printf("%s\n", "Process terminated.");
     }
 
