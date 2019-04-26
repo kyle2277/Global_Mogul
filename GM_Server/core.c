@@ -11,9 +11,10 @@
 //TODO adapt for cross-platform uses
 //TODO comments
 //TODO change 'print_reply' to 'print_PI_reply'
+//TODO BUG: User "user" does not exists when second client connects
 
 #define MAX_DATA 1024
-#define ENCRYPTED_TAG "encrytped_"
+#define ENCRYPTED_TAG "encrypted_"
 #define ENCRYPTED_EXT ".txt"
 
  /*
@@ -198,8 +199,10 @@ bool send_file(char* args_input, char *cwd) {
     //client asks for file length
     print_reply(receive);
     long file_len = get_file_size(encrypted_path);
-    send(client_sock_PI, &file_len, file_len, 0);
-    char* file_bytes = get_bytes(encrypted_path);
+    char *file_len_str = malloc(sizeof(long));
+    sprintf(file_len_str, "%ld", file_len);
+    send(client_sock_PI, file_len_str, strlen(file_len_str), 0);
+    char *file_bytes = get_bytes(encrypted_path);
     send(client_sock_DTP, file_bytes, file_len, 0);
     reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
     receive[reply_len] = '\0';
@@ -211,6 +214,7 @@ bool send_file(char* args_input, char *cwd) {
     }
     // Delete encrypted file
     remove(encrypted_path);
+    free(file_len_str);
     free(file_name);
     free(file_bytes);
     return true;
