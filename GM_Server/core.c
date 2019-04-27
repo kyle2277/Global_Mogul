@@ -251,7 +251,6 @@ bool port(char *args_input) {
     //PORT INPUT MUST BE INT
     char *port_num_str = split_args(args_input);
     //receive confirmation to delete DTP port
-    char receive[MAX_DATA];
     print_PI_reply();
     char *rest_str[256];
     long port_num = strtol(port_num_str, rest_str, 10);
