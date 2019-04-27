@@ -59,9 +59,10 @@ char* check_input() {
     send(sock_PI, send_server, strlen(send_server), 0);
     int reply_len = recv(sock_PI, receive, BUFFER, 0);
     receive[reply_len] = '\0';
+    printf("%s\n", receive);
     if (strstr(receive, "200")) {
         //success, get file name
-        snprintf(send_server, strlen("file name"), "%s", "file name");
+        sprintf(send_server, "%s", "file name");
         send(sock_PI, send_server, strlen(send_server), 0);
         reply_len = recv(sock_PI, receive, BUFFER, 0);
         receive[reply_len] = '\0';
@@ -81,8 +82,8 @@ long get_file_len() {
     send(sock_PI, data_ready, strlen(data_ready), 0);
     int reply_len = recv(sock_PI, length_str, BUFFER, 0);
     length_str[reply_len] = '\0';
-    char *rest_str[256];
-    long length = strtol(length_str, rest_str, 10);
+    long length = strtol(length_str, NULL, 10);
+    printf("file length: %ld\n", length);
     return length;
 }
 
@@ -119,9 +120,10 @@ void file_recv(char* file_name, char *cwd) {
     long file_len = get_file_len();
     char* file_bytes = malloc(file_len);
     // receive the file from the server
-    recv(sock_DTP, file_bytes, file_len, 0);
+    int len_received = recv(sock_DTP, file_bytes, file_len, 0);
+    printf("bytes received: %d\n", len_received);
     //confirm file received
-    char confirm_end[BUFFER] = "[200] file received";
+    char *confirm_end = "[200] file received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
     if(can_write(file_name, decrypt_path)) {
