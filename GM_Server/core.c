@@ -105,14 +105,9 @@ void list(char* list_type) {
 }
 
 // get byte array to send to client
-char* get_bytes(char* full_path) {
-    FILE* f = fopen(full_path, "r");
-    fseek(f, 0, SEEK_END);
-    long file_len = ftell(f);
-    char* file_bytes = malloc(file_len);
-    fseek(f, 0, SEEK_SET);
-    fread(file_bytes, 1, file_len, f);
-    fclose(f);
+char* get_bytes(FILE* f, long numBytes) {
+    char* file_bytes = malloc(numBytes);
+    fread(file_bytes, 1, numBytes, f);
     return file_bytes;
 }
 
@@ -170,6 +165,10 @@ void print_PI_reply() {
     printf("%s\n", receive);
 }
 
+void send_packets(long packet_size) {
+
+}
+
 bool send_file(char* args_input, char *cwd) {
     char* file_name = split_args(args_input);
     char receive[MAX_DATA];
@@ -203,18 +202,27 @@ bool send_file(char* args_input, char *cwd) {
     //client asks for file length
     print_PI_reply();
     long file_len = get_file_size(encrypted_path);
-    char *file_len_str = malloc(256);
+    char file_len_str[256];
     if(file_len <= 1024) {
         //send as one file
-        char *file_bytes = get_bytes(encrypted_path);
+        FILE* f = fopen(encrypted_path, "r");
+        char *file_bytes = get_bytes(f, MAX_DATA);
+        fclose(f);
         sprintf(file_len_str, "%ld", file_len);
         send(client_sock_PI, file_len_str, strlen(file_len_str), 0);
-        int error = send(client_sock_DTP, file_bytes, file_len, 0);
-        printf("bytes sent: %d\n", error);
+        int bytes_sent = send(client_sock_DTP, file_bytes, file_len, 0);
+        printf("bytes sent: %d\n", bytes_sent);
         free(file_bytes);
     } else {
         //send in chunks
+        long packet_size = MAX_DATA;
+        char packet_size_str[256];
+        sprintf(packet_size_str, "%ld", packet_size);
         //send client_sock_PI size of chunks
+        send(client_sock_PI, packet_size_str, strlen(packet_size_str), 0);
+        //server confirms
+        print_PI_reply();
+        send_packets(packet_size);
         //recv confirmation
         //send chunks via DTP
     }
@@ -228,7 +236,6 @@ bool send_file(char* args_input, char *cwd) {
     }
     // Delete encrypted file
     remove(encrypted_path);
-    free(file_len_str);
     free(file_name);
     return true;
 }
