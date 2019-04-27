@@ -10,11 +10,11 @@
 
 void echo_loop();
 void serial_recv();
-char* check_input();
+void check_input(char *cwd);
 long get_file_len();
 void check_output(char *cwd);
 bool can_write(char *file_name, char *full_path);
-void file_recv(char *path, char *cwd);
+void file_recv(char *path, char *decrypt_path, char *cwd);
 bool dispatch(char *input, char *cwd);
 void port();
 void test_DTP_connection();

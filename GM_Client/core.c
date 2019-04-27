@@ -53,27 +53,22 @@ void serial_recv() {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
-char* check_input() {
-    char send_server[256] = "args ok?";
-    char *receive = malloc(BUFFER);
-    send(sock_PI, send_server, strlen(send_server), 0);
-    int reply_len = recv(sock_PI, receive, BUFFER, 0);
-    receive[reply_len] = '\0';
-    printf("%s\n", receive);
-    if (strstr(receive, "200")) {
-        //success, get file name
-        sprintf(send_server, "%s", "file name");
-        send(sock_PI, send_server, strlen(send_server), 0);
-        reply_len = recv(sock_PI, receive, BUFFER, 0);
-        receive[reply_len] = '\0';
-        printf("%s\n", receive);
-        // return file name
-        return receive;
-    } else {
-        printf("%s\n", receive);
-        return NULL;
-        //failure
+bool can_write(char* file_name, char* decrypt_path) {
+    FILE* f;
+    if((f = fopen(decrypt_path, "r"))) {
+        fclose(f);
+        char user_input[4];
+        printf("File %s already exists.\nWould you like to overwrite it? [y/n]\n", file_name);
+        fgets(user_input, 4, stdin);
+        if(strstr(user_input, "y") || strstr(user_input, "Y")) {
+            remove(decrypt_path);
+            return true;
+        } else {
+            // file is received but not written
+            return false;
+        }
     }
+    return true;
 }
 
 long get_file_len() {
@@ -93,63 +88,75 @@ void check_output(char *cwd) {
     mkdir(absolute_output, S_IRWXU);
 }
 
-bool can_write(char* file_name, char* decrypt_path) {
-    FILE* f;
-    if((f = fopen(decrypt_path, "r"))) {
-        fclose(f);
-        char user_input[4];
-        printf("File %s already exists.\nWould you like to overwrite it? [y/n]\n", file_name);
-        fgets(user_input, 4, stdin);
-        if(strstr(user_input, "y") || strstr(user_input, "Y")) {
-            remove(decrypt_path);
-            return true;
-        } else {
-            // file is received but not written
-            return false;
-        }
-    }
-    return true;
-}
+void file_recv(char* file_name, char *decrypt_path, char *cwd) {
+    int len_received;
+    char *file_bytes;
 
-void file_recv(char* file_name, char *cwd) {
-    char decrypt_path[BUFFER];
-    sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
     printf("%s\n", "Receiving data ...");
     // write to file using a byte array;
     // data port ready to receive bytes
     long file_len = get_file_len();
-    char* file_bytes = malloc(file_len);
-    // receive the file from the server
-    int len_received = recv(sock_DTP, file_bytes, file_len, 0);
-    printf("bytes received: %d\n", len_received);
+    if(file_len <= BUFFER) {
+        file_bytes = malloc(file_len);
+        // receive the file from the server
+        len_received = recv(sock_DTP, file_bytes, file_len, 0);
+        printf("bytes received: %d\n", len_received);
+    } else {
+        //prepare to receive packets
+        long packet_size = file_len;
+        char num_packets_str[256];
+        recv(sock_PI, num_packets_str, BUFFER, 0);
+        long num_packets = strtol(num_packets_str, NULL, 10);
+        //receive packets
+
+    }
+
+    printf("%s\n", "Processing file ...");
+    char absolute_path[BUFFER];
+    sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+    check_output(cwd);
+    FILE* out = fopen(absolute_path, "w");
+    fwrite(file_bytes, 1, file_len, out);
+    fclose(out);
+    // decryption process
+    printf("%s\n", "Decrypting file ...");
+    if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
+        printf("%s\n", "Decryption successful.");
+        // Delete encrypted file
+        remove(absolute_path);
+    } else {
+        printf("%s\n", "Decryption failed.");
+        check_log(cwd);
+    }
+    free(file_bytes);
     //confirm file received
     char *confirm_end = "[200] file received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
-    if(can_write(file_name, decrypt_path)) {
-        //save file
-        printf("%s\n", "Processing file ...");
-        char absolute_path[BUFFER];
-        sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
-        check_output(cwd);
-        FILE* out = fopen(absolute_path, "w");
-        fwrite(file_bytes, 1, file_len, out);
-        fclose(out);
-        // decryption process
-        printf("%s\n", "Decrypting file ...");
-        if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
-            printf("%s\n", "Decryption successful.");
-            // Delete encrypted file
-            remove(absolute_path);
+
+}
+
+void check_input(char *cwd) {
+    char send_server[256] = "file name?";
+    char *file_name = malloc(BUFFER);
+    send(sock_PI, send_server, strlen(send_server), 0);
+    int reply_len = recv(sock_PI, file_name, BUFFER, 0);
+    if(!strstr(file_name, "ERROR")) {
+        file_name[reply_len] = '\0';
+        printf("%s\n", file_name);
+        char decrypt_path[BUFFER];
+        sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
+        if(can_write(file_name, decrypt_path)) {
+            char *can_send = "200 can send";
+            send(sock_PI, can_send, strlen(can_send), 0);
+            file_recv(file_name, decrypt_path, cwd);
         } else {
-            printf("%s\n", "Decryption failed.");
-            check_log(cwd);
+            // do not send file
+            printf("%s\n", "Process terminated.");
         }
-        free(file_bytes);
     } else {
-        //discard file
-        free(file_bytes);
-        printf("%s\n", "Process terminated.");
+        printf("%s\n", file_name);
+        //failure
     }
 
 }
@@ -196,14 +203,7 @@ bool dispatch(char* input, char *cwd) {
     } else if(strstr(input, "PORT")) {
         port();
     } else if(strstr(input, "RETR")) {
-        char* file_name = check_input();
-        if(file_name) {
-            file_recv(file_name, cwd);
-        } else {
-            printf("%s\n", "Insufficient arguments.");
-        }
-        // freeing memory of path variable
-        free(file_name);
+        check_input(cwd);
     }else if(strstr(input, "QUIT")) {
         return false;
     }

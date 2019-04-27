@@ -169,41 +169,10 @@ void send_packets(long packet_size) {
 
 }
 
-bool send_file(char* args_input, char *cwd) {
-    char* file_name = split_args(args_input);
-    char receive[MAX_DATA];
-    int reply_len;
-    char absolute_path[MAX_DATA];
-    char encrypted_path[MAX_DATA];
-    print_PI_reply();
-    if(file_name && file_available(file_name)) {
-        sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
-        if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
-            sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
-            char *success = "200";
-            send(client_sock_PI, success, strlen(success), 0);
-            reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
-            receive[reply_len] = '\0';
-            printf("%s\n", receive);
-            //send file_name to client
-            send(client_sock_PI, file_name, strlen(file_name), 0);
-        } else {
-            printf("%s\n", "Encryption failure.");
-            check_log(cwd);
-            free(file_name);
-            return false;
-        }
-    } else {
-        char *error = "Insufficient arguments or File not found.";
-        send(client_sock_PI, error, strlen(error), 0);
-        free(file_name);
-        return false;
-    }
-    //client asks for file length
-    print_PI_reply();
+void split_file(char *encrypted_path) {
     long file_len = get_file_size(encrypted_path);
     char file_len_str[256];
-    if(file_len <= 1024) {
+    if(file_len <= MAX_DATA) {
         //send as one file
         FILE* f = fopen(encrypted_path, "r");
         char *file_bytes = get_bytes(f, MAX_DATA);
@@ -220,24 +189,71 @@ bool send_file(char* args_input, char *cwd) {
         sprintf(packet_size_str, "%ld", packet_size);
         //send client_sock_PI size of chunks
         send(client_sock_PI, packet_size_str, strlen(packet_size_str), 0);
-        //server confirms
+
+        int num_packets = (int) ((file_len - (file_len % packet_size)) / packet_size) + 1;
+        //send client_sock_PI number of packets to expect
+        char num_packets_str[256];
+        sprintf(num_packets_str, "%d", num_packets);
+        send(client_sock_PI, num_packets_str, strlen(num_packets_str), 0);
         print_PI_reply();
+        //start sending packets over DTP
         send_packets(packet_size);
         //recv confirmation
         //send chunks via DTP
     }
-    reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
-    receive[reply_len] = '\0';
-    printf("%s\n", receive);
-    if(strstr(receive, "200")) {
-        printf("%s\n", "file transfer success");
+}
+
+bool send_file(char* args_input, char *cwd) {
+    char* file_name = split_args(args_input);
+    char receive[MAX_DATA];
+    int reply_len;
+    char absolute_path[MAX_DATA];
+    char encrypted_path[MAX_DATA];
+    print_PI_reply();
+    if(file_name && file_available(file_name)) {
+        //send file_name to client
+        send(client_sock_PI, file_name, strlen(file_name), 0);
+        reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);
+        receive[reply_len] ='\0';
+        printf("%s\n", receive);
+        if(strstr(receive, "200")) {
+            //send file
+            sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
+            if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
+                sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+            } else {
+                printf("%s\n", "Encryption failure.");
+                check_log(cwd);
+                free(file_name);
+                return false;
+            }
+            split_file(encrypted_path);
+            reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
+            receive[reply_len]='\0';
+            printf("%s\n", receive);
+            if(strstr(receive, "200")) {
+                printf("%s\n", "file transfer success");
+            } else {
+                printf("%s\n", "file transfer failure");
+            }
+            // Delete encrypted file
+            remove(encrypted_path);
+            free(file_name);
+            return true;
+        } else {
+            //dont send file
+            char *okay = "200";
+            send(client_sock_PI, okay, strlen(okay), 0);
+            return false;
+        }
+
     } else {
-        printf("%s\n", "file transfer failure");
+        char *error = "ERROR: Insufficient arguments or File not found.";
+        send(client_sock_PI, error, strlen(error), 0);
+        free(file_name);
+        return false;
     }
-    // Delete encrypted file
-    remove(encrypted_path);
-    free(file_name);
-    return true;
+
 }
 
 bool test_DTP_connection() {
@@ -259,8 +275,7 @@ bool port(char *args_input) {
     char *port_num_str = split_args(args_input);
     //receive confirmation to delete DTP port
     print_PI_reply();
-    char *rest_str[256];
-    long port_num = strtol(port_num_str, rest_str, 10);
+    long port_num = strtol(port_num_str, NULL, 10);
     if(port_num >= 60000 && port_num <= 65535) {
         //run DTP_port;
         //change to specified port

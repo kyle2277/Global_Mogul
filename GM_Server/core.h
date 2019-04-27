@@ -24,6 +24,7 @@ char* split_args(char *receive);
 bool file_available(char *path);
 void print_PI_reply();
 void send_packets(long packet_size);
+void split_file(char *encrypted_path);
 bool send_file(char *args_input, char *cwd);
 bool port(char *args_input);
 bool test_DTP_connection();
