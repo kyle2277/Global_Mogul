@@ -73,8 +73,7 @@ bool can_write(char* file_name, char* decrypt_path) {
 
 long get_file_len() {
     char length_str[BUFFER];
-    char *data_ready = "File length";
-    send(sock_PI, data_ready, strlen(data_ready), 0);
+    //receive file length
     int reply_len = recv(sock_PI, length_str, BUFFER, 0);
     length_str[reply_len] = '\0';
     long length = strtol(length_str, NULL, 10);
