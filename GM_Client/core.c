@@ -87,6 +87,21 @@ void check_output(char *cwd) {
     mkdir(absolute_output, S_IRWXU);
 }
 
+void receive_packets(char *file_bytes, long num_packets, long packet_size, long last_packet, FILE* out) {
+    char packet_bytes[packet_size];
+    for(int i = 0; i < num_packets; i++) {
+        recv(sock_DTP, packet_bytes, packet_size, 0);
+//        snprintf(file_bytes, strlen(file_bytes) + packet_size, "%s%s", file_bytes, packet_bytes);
+        fwrite(packet_bytes, 1, packet_size, out);
+        send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+    }
+    //last packet
+    recv(sock_DTP, packet_bytes, last_packet, 0);
+    snprintf(file_bytes, strlen(file_bytes) + last_packet, "%s%s", file_bytes, packet_bytes);
+    fwrite(packet_bytes, 1, last_packet, out);
+    send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+}
+
 void file_recv(char* file_name, char *decrypt_path, char *cwd) {
     int len_received;
     char *file_bytes;
@@ -94,35 +109,53 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
     printf("%s\n", "Receiving data ...");
     // write to file using a byte array;
     // data port ready to receive bytes
-    long file_len = get_file_len();
-    if(file_len <= BUFFER) {
-        file_bytes = malloc(file_len);
-        // receive the file from the server
-        len_received = recv(sock_DTP, file_bytes, file_len, 0);
-        printf("bytes received: %d\n", len_received);
-    } else {
-        //prepare to receive packets
-        long packet_size = file_len;
-        char num_packets_str[256];
-        recv(sock_PI, num_packets_str, BUFFER, 0);
-        long num_packets = strtol(num_packets_str, NULL, 10);
-        //receive packets
-
-    }
-
-    printf("%s\n", "Processing file ...");
     char absolute_path[BUFFER];
     sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
     check_output(cwd);
     FILE* out = fopen(absolute_path, "w");
-    fwrite(file_bytes, 1, file_len, out);
+    long file_len = get_file_len();
+    file_bytes = malloc(file_len);
+    if(file_len <= BUFFER) {
+        // receive the file from the server
+        len_received = recv(sock_DTP, file_bytes, file_len, 0);
+        printf("bytes received: %d\n", len_received);
+        fwrite(file_bytes, 1, file_len, out);
+    } else {
+        //prepare to receive packets
+        //get packet size
+        char packet_size_str[256];
+        long packet_size;
+        send(sock_PI, "packet size?", strlen("packet size?"), 0);
+        len_received = recv(sock_PI, packet_size_str, BUFFER, 0);
+        packet_size_str[len_received] = '\0';
+        printf("Packet size: %s\n", packet_size_str);
+        packet_size = strtol(packet_size_str, NULL, 10);
+        //get last packet size
+        send(sock_PI, "last packet size?", strlen("last packet size?"), 0);
+        char last_packet_str[256];
+        len_received = recv(sock_PI, last_packet_str, BUFFER, 0);
+        last_packet_str[len_received] = '\0';
+        printf("size of last packet: %s\n", last_packet_str);
+        long last_packet = strtol(last_packet_str, NULL, 10);
+        // get number of packets
+        send(sock_PI, "num packets?", strlen("num packets?"), 0);
+        char num_packets_str[256];
+        len_received = recv(sock_PI, num_packets_str, BUFFER, 0);
+        num_packets_str[len_received] = '\0';
+        printf("Number packets: %s\n", num_packets_str);
+        long num_packets = strtol(num_packets_str, NULL, 10);
+        //receive packets
+        receive_packets(file_bytes, num_packets, packet_size, last_packet, out);
+    }
+
+    printf("%s\n", "Processing file ...");
     fclose(out);
     // decryption process
     printf("%s\n", "Decrypting file ...");
     if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
         printf("%s\n", "Decryption successful.");
         // Delete encrypted file
-        remove(absolute_path);
+        //remove(absolute_path);
     } else {
         printf("%s\n", "Decryption failed.");
         check_log(cwd);

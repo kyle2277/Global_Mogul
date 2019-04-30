@@ -106,7 +106,7 @@ void list(char* list_type) {
 
 // get byte array to send to client
 char* get_bytes(FILE* f, long numBytes) {
-    char* file_bytes = malloc(numBytes);
+    char *file_bytes = malloc(numBytes);
     fread(file_bytes, 1, numBytes, f);
     return file_bytes;
 }
@@ -165,20 +165,35 @@ void print_PI_reply() {
     printf("%s\n", receive);
 }
 
-void send_packets(long packet_size) {
+void send_packets(long num_packets, long packet_size, char *encrypted_path, long last_packet) {
+    FILE* f = fopen(encrypted_path, "r");
+    fseek(f, 0, SEEK_SET);
+    char receive[256];
+    for(int i = 0; i < num_packets; i++) {
+        char *packet_bytes = get_bytes(f, packet_size);
+        send(client_sock_DTP, packet_bytes, packet_size, 0);
+        recv(client_sock_DTP, receive, MAX_DATA, 0);
+        free(packet_bytes);
+    }
+    //last packet
+    char *packet_bytes = get_bytes(f, last_packet);
+    send(client_sock_DTP, packet_bytes, last_packet, 0);
+    recv(client_sock_DTP, receive, MAX_DATA, 0);
+    free(packet_bytes);
+    fclose(f);
 
 }
 
 void split_file(char *encrypted_path) {
     long file_len = get_file_size(encrypted_path);
     char file_len_str[256];
+    sprintf(file_len_str, "%ld", file_len);
+    send(client_sock_PI, file_len_str, strlen(file_len_str), 0);
     if(file_len <= MAX_DATA) {
         //send as one file
         FILE* f = fopen(encrypted_path, "r");
         char *file_bytes = get_bytes(f, MAX_DATA);
         fclose(f);
-        sprintf(file_len_str, "%ld", file_len);
-        send(client_sock_PI, file_len_str, strlen(file_len_str), 0);
         int bytes_sent = send(client_sock_DTP, file_bytes, file_len, 0);
         printf("bytes sent: %d\n", bytes_sent);
         free(file_bytes);
@@ -188,16 +203,22 @@ void split_file(char *encrypted_path) {
         char packet_size_str[256];
         sprintf(packet_size_str, "%ld", packet_size);
         //send client_sock_PI size of chunks
+        print_PI_reply();
         send(client_sock_PI, packet_size_str, strlen(packet_size_str), 0);
-
-        int num_packets = (int) ((file_len - (file_len % packet_size)) / packet_size) + 1;
+        print_PI_reply();
+        long num_packets = ((file_len - (file_len % packet_size)) / packet_size);
+        long last_size = file_len % packet_size;
+        char last_size_str[256];
+        sprintf(last_size_str, "%ld", last_size);
+        //send client size of last packet
+        send(client_sock_PI, last_size_str, strlen(last_size_str), 0);
+        print_PI_reply();
         //send client_sock_PI number of packets to expect
         char num_packets_str[256];
-        sprintf(num_packets_str, "%d", num_packets);
+        sprintf(num_packets_str, "%ld", num_packets);
         send(client_sock_PI, num_packets_str, strlen(num_packets_str), 0);
-        print_PI_reply();
         //start sending packets over DTP
-        send_packets(packet_size);
+        send_packets(num_packets, packet_size, encrypted_path, last_size);
         //recv confirmation
         //send chunks via DTP
     }
