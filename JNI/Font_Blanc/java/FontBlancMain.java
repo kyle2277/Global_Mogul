@@ -147,11 +147,9 @@ public class FontBlancMain {
          for(int i = 0; i < 4; i++) {
 				//prevents writing extra zero value bytes at end of file
 				if((Math.round(decrypted.get(i,0)) != -1) || (in.hasNextLine())) {
-					//System.out.print((byte) Math.round(decrypted.get(i,0)) + " ");
-               out.write((byte) Math.round(decrypted.get(i,0)));
+               out.write((byte) ((Math.round(decrypted.get(i,0)) >> 0) & 0xff));
 				}
          }
-         //System.out.println();
       }   
    }
    

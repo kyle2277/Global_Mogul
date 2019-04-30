@@ -173,8 +173,8 @@ void check_input(char *cwd) {
     char *file_name = malloc(BUFFER);
     send(sock_PI, send_server, strlen(send_server), 0);
     int reply_len = recv(sock_PI, file_name, BUFFER, 0);
+    file_name[reply_len] = '\0';
     if(!strstr(file_name, "ERROR")) {
-        file_name[reply_len] = '\0';
         printf("%s\n", file_name);
         char decrypt_path[BUFFER];
         sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);

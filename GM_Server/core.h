@@ -15,13 +15,13 @@ struct sockaddr_in client_PI;
 struct sockaddr_in client_DTP;
 
 void echo_loop();
-void dir_list();
+void dir_list(char *cwd);
 void help_list();
-void list(char *list_type);
+void list(char *list_type, char *cwd);
 char* get_bytes(FILE* f, long numBytes);
 long get_file_size(char *path);
 char* split_args(char *receive);
-bool file_available(char *path);
+bool file_available(char *path, char *cwd);
 void print_PI_reply();
 void send_packets(long num_packets, long packet_size, char *encrypted_path, long last_packet);
 void split_file(char *encrypted_path);

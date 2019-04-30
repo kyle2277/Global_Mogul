@@ -14,7 +14,7 @@ char access_path[MAX_DATA];
 char pass[MAX_DATA];
 
 void clean(char *type, char *cred);
-bool is_valid_user(char *args, char *cwd);
+bool is_user_accessible(char *args, char *search_path);
 void submit_auth(char *args[], char *cwd);
 void get_auth(char *cwd);
 

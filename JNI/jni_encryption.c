@@ -29,16 +29,16 @@ jmethodID mid;
 
 bool JNI_init(char *cwd) {
     if(FB_exists(cwd)) {
-        JavaVMOption options[2];
+        JavaVMOption options[1];
         char classpath[MAX_DATA];
         sprintf(classpath, "-Djava.class.path=%s/%s%c%s/%s%c%s/%s%c%s/%s%c%s/%s", cwd, FONT_BLANC_PATH, PATH_SEPARATOR,
                 cwd, EJML_SIMPLE, PATH_SEPARATOR, cwd, EJML_CORE, PATH_SEPARATOR, cwd, EJML_DDENSE, PATH_SEPARATOR,
                 cwd, COMMONS_LANG);
         options[0].optionString = classpath;
-        options[1].optionString = "-verbose:jni";
+        //options[1].optionString = "-verbose:jni";
         memset(&vm_args, 0, sizeof(vm_args));
         vm_args.version = JNI_VERSION_1_8;
-        vm_args.nOptions = 2;
+        vm_args.nOptions = 1;
         vm_args.options = options;
         vm_args.ignoreUnrecognized = JNI_FALSE;
         return (JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args) != JNI_ERR);

@@ -17,6 +17,7 @@
 #define MAX_DATA 1024
 #define ENCRYPTED_TAG "encrypted_"
 #define ENCRYPTED_EXT ".txt"
+#define USERS_DIRECTORY "GM_Users"
 
  /*
  * receives data from client on PI channel and echoes data back on DTP channel.
@@ -45,11 +46,11 @@ void echo_loop() {
     }
 }
 
-void dir_list() {
+void dir_list(char *cwd) {
     struct dirent *ent;
     char output_path[MAX_DATA];
     char receive[MAX_DATA];
-    sprintf(output_path, "%s%s", "./", access_path);
+    sprintf(output_path, "%s/%s", cwd, access_path);
     printf("%s\n", output_path);
     DIR *dir = opendir(output_path);
     while ((ent = readdir(dir)) != NULL) {
@@ -85,7 +86,7 @@ void help_list() {
     printf("%s\n", receive);
 }
 
-void list(char* list_type) {
+void list(char* list_type, char * cwd) {
     char receive[MAX_DATA];
     // waits until client data socket is ready to receive data
     int reply_len = recv(client_sock_DTP, receive, MAX_DATA, 0);
@@ -95,7 +96,7 @@ void list(char* list_type) {
         char *send_client = "[200] LIST";
         send(client_sock_DTP, send_client, strlen(send_client), 0);
         recv(client_sock_DTP, receive, MAX_DATA, 0);
-        dir_list();
+        dir_list(cwd);
     } else if(strstr(list_type, "HELP")) {
         char *send_client = "[200] HELP\n";
         send(client_sock_DTP, send_client, strlen(send_client), 0);
@@ -146,16 +147,15 @@ char* split_args(char* receive) {
     return NULL;
 }
 
-bool file_available(char* file_name) {
-    char full_path[MAX_DATA];
-    sprintf(full_path, "./%s/%s", access_path, file_name);
-    FILE* f;
-    if((f = fopen(full_path, "r"))) {
-        fclose(f);
+bool file_available(char* file_name, char *cwd) {
+    char search_path[256];
+    sprintf(search_path, "%s/%s", cwd, access_path);
+    if(is_user_accessible(file_name, search_path)) {
         return true;
+    } else {
+        printf("File %s does not exist\n", file_name);
+        return false;
     }
-    printf("File %s does not exist\n", file_name);
-    return false;
 }
 
 void print_PI_reply() {
@@ -231,7 +231,7 @@ bool send_file(char* args_input, char *cwd) {
     char absolute_path[MAX_DATA];
     char encrypted_path[MAX_DATA];
     print_PI_reply();
-    if(file_name && file_available(file_name)) {
+    if(file_name && file_available(file_name, cwd)) {
         //send file_name to client
         send(client_sock_PI, file_name, strlen(file_name), 0);
         reply_len = recv(client_sock_PI, receive, MAX_DATA, 0);

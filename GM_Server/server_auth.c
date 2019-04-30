@@ -11,7 +11,7 @@
 
 // pre-processor definitions
 #define MAX_DATA 1024
-#define USER_TAG "GM_"
+#define USERS_DIRECTORY "GM_Users"
 
 /*
  * Replaces all characters in current credentials with the null string character. Prepares system for new user
@@ -25,18 +25,16 @@ void clean(char *type, char *cred) {
 /*
  * Check if user directory exists
  */
-bool is_valid_user(char *args, char *cwd) {
+bool is_user_accessible(char *args, char *search_path) {
     struct dirent *ent;
-    char GM_directory[256];
-    sprintf(GM_directory, "%s%s", USER_TAG, args);
-    char user_folder[256];
-    sprintf(user_folder, "%s/%s", cwd, "users");
-    DIR *dir = opendir(user_folder);
+    char compare[256];
+    sprintf(compare, "%s", args);
+    DIR *dir = opendir(search_path);
     while ((ent = readdir(dir)) != NULL) {
         char name[256];
         strncpy(name, ent->d_name, strlen(ent->d_name));
         name[strlen(ent->d_name)] = '\0';
-        if(strcmp(name, GM_directory) == 0) {
+        if(strcmp(name, compare) == 0) {
             return true;
         }
     }
@@ -49,8 +47,10 @@ bool is_valid_user(char *args, char *cwd) {
 void submit_auth(char *args[], char *cwd) {
     if(strstr(args[0], "USER")) {
         if(access_path[0] != '\0') { clean("Username", access_path); }
-        if(is_valid_user(args[1], cwd)) {
-            strncpy(access_path, args[1], strlen(args[1]));
+        char user_path[256];
+        sprintf(user_path, "%s/%s", cwd, USERS_DIRECTORY);
+        if(is_user_accessible(args[1], user_path)) {
+            sprintf(access_path, "%s/%s", USERS_DIRECTORY, args[1]);
             printf("%s\n", access_path);
             if(access_path[0] != '\0' && pass[0] != '\0') {
                 // 230: user logged in, proceed
