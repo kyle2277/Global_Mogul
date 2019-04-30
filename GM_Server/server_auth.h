@@ -14,8 +14,8 @@ char access_path[MAX_DATA];
 char pass[MAX_DATA];
 
 void clean(char *type, char *cred);
-bool is_valid_user(char *args);
-void submit_auth(char *args[]);
-void get_auth();
+bool is_valid_user(char *args, char *cwd);
+void submit_auth(char *args[], char *cwd);
+void get_auth(char *cwd);
 
 #endif //GM_SERVER_AUTHORIZE_H

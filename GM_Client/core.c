@@ -155,7 +155,7 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
     if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
         printf("%s\n", "Decryption successful.");
         // Delete encrypted file
-        //remove(absolute_path);
+        remove(absolute_path);
     } else {
         printf("%s\n", "Decryption failed.");
         check_log(cwd);

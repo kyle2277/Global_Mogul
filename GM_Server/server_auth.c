@@ -11,6 +11,7 @@
 
 // pre-processor definitions
 #define MAX_DATA 1024
+#define USER_TAG "GM_"
 
 /*
  * Replaces all characters in current credentials with the null string character. Prepares system for new user
@@ -24,25 +25,31 @@ void clean(char *type, char *cred) {
 /*
  * Check if user directory exists
  */
-bool is_valid_user(char *args) {
-    bool valid = false;
-    mkdir(args, S_IRWXU);
-    if(EEXIST == errno) {
-        valid = true;
-    } else {
-        printf("%s\n", "User does not exist directory.");
-        rmdir(args);
+bool is_valid_user(char *args, char *cwd) {
+    struct dirent *ent;
+    char GM_directory[256];
+    sprintf(GM_directory, "%s%s", USER_TAG, args);
+    char user_folder[256];
+    sprintf(user_folder, "%s/%s", cwd, "users");
+    DIR *dir = opendir(user_folder);
+    while ((ent = readdir(dir)) != NULL) {
+        char name[256];
+        strncpy(name, ent->d_name, strlen(ent->d_name));
+        name[strlen(ent->d_name)] = '\0';
+        if(strcmp(name, GM_directory) == 0) {
+            return true;
+        }
     }
-    return valid;
+    return false;
 }
 
 /*
  * Stores username and password from client input
  */
-void submit_auth(char *args[]) {
+void submit_auth(char *args[], char *cwd) {
     if(strstr(args[0], "USER")) {
         if(access_path[0] != '\0') { clean("Username", access_path); }
-        if(is_valid_user(args[1])) {
+        if(is_valid_user(args[1], cwd)) {
             strncpy(access_path, args[1], strlen(args[1]));
             printf("%s\n", access_path);
             if(access_path[0] != '\0' && pass[0] != '\0') {
@@ -81,7 +88,7 @@ void submit_auth(char *args[]) {
 /*
  * Facilitates authorization of a newly connected user. Username and password required
  */
-void get_auth() {
+void get_auth(char *cwd) {
     do {
         int max_args = 2;
         char *delim = " ";
@@ -118,9 +125,9 @@ void get_auth() {
                     send(client_sock_PI, send_client, strlen(send_client), 0);
                     clean("Username", access_path);
                     clean("Password", pass);
-                    get_auth();
+                    get_auth(cwd);
                 } else {
-                    submit_auth(args);
+                    submit_auth(args, cwd);
                 }
             }
         }

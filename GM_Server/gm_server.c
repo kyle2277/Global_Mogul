@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     while(true) {
         printf("%s\n", "Waiting for client connection ...");
         connect_PI();
-        get_auth();
+        get_auth(cwd);
         connect_DTP();
         printf("Listening.\n");
         command_loop(cwd);
