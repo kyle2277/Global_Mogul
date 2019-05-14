@@ -240,7 +240,9 @@ bool send_file(char* args_input, char *cwd) {
         if(strstr(receive, "200")) {
             //send file
             sprintf(absolute_path, "%s/%s/%s", cwd, access_path, file_name);
-            if(JNI_encrypt(absolute_path, pass, "encrypt", cwd)) {
+            int encrypt_status = JNI_encrypt(absolute_path, pass, "encrypt", cwd);
+            printf("%d\n", encrypt_status);
+            if(encrypt_status) {
                 sprintf(encrypted_path, "./%s/%s%s%s", access_path, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
             } else {
                 printf("%s\n", "Encryption failure.");
