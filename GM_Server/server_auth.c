@@ -11,6 +11,7 @@
 
 // pre-processor definitions
 #define MAX_DATA 1024
+#define USERS_DIRECTORY "GM_Users"
 
 /*
  * Replaces all characters in current credentials with the null string character. Prepares system for new user
@@ -24,26 +25,32 @@ void clean(char *type, char *cred) {
 /*
  * Check if user directory exists
  */
-bool is_valid_user(char *args) {
-    bool valid = false;
-    mkdir(args, S_IRWXU);
-    if(EEXIST == errno) {
-        valid = true;
-    } else {
-        printf("%s\n", "User does not exist directory.");
-        rmdir(args);
+bool is_user_accessible(char *args, char *search_path) {
+    struct dirent *ent;
+    char compare[256];
+    sprintf(compare, "%s", args);
+    DIR *dir = opendir(search_path);
+    while ((ent = readdir(dir)) != NULL) {
+        char name[256];
+        strncpy(name, ent->d_name, strlen(ent->d_name));
+        name[strlen(ent->d_name)] = '\0';
+        if(strcmp(name, compare) == 0) {
+            return true;
+        }
     }
-    return valid;
+    return false;
 }
 
 /*
  * Stores username and password from client input
  */
-void submit_auth(char *args[]) {
+void submit_auth(char *args[], char *cwd) {
     if(strstr(args[0], "USER")) {
         if(access_path[0] != '\0') { clean("Username", access_path); }
-        if(is_valid_user(args[1])) {
-            strncpy(access_path, args[1], strlen(args[1]));
+        char user_path[256];
+        sprintf(user_path, "%s/%s", cwd, USERS_DIRECTORY);
+        if(is_user_accessible(args[1], user_path)) {
+            sprintf(access_path, "%s/%s", USERS_DIRECTORY, args[1]);
             printf("%s\n", access_path);
             if(access_path[0] != '\0' && pass[0] != '\0') {
                 // 230: user logged in, proceed
@@ -81,7 +88,7 @@ void submit_auth(char *args[]) {
 /*
  * Facilitates authorization of a newly connected user. Username and password required
  */
-void get_auth() {
+void get_auth(char *cwd) {
     do {
         int max_args = 2;
         char *delim = " ";
@@ -118,9 +125,9 @@ void get_auth() {
                     send(client_sock_PI, send_client, strlen(send_client), 0);
                     clean("Username", access_path);
                     clean("Password", pass);
-                    get_auth();
+                    get_auth(cwd);
                 } else {
-                    submit_auth(args);
+                    submit_auth(args, cwd);
                 }
             }
         }

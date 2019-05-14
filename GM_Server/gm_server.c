@@ -40,13 +40,13 @@ void command_loop(char *cwd) {
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // list available files
-            list("LIST");
+            list("LIST", cwd);
         } else if(strstr(receive, "HELP")) {
             char *send_client = "Help list";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // help list
-            list("HELP");
+            list("HELP", cwd);
         } else if(strstr(receive, "RETR")) {
             char *send_client = "Retrieve";
             send(client_sock_PI, send_client, strlen(send_client), 0);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     while(true) {
         printf("%s\n", "Waiting for client connection ...");
         connect_PI();
-        get_auth();
+        get_auth(cwd);
         connect_DTP();
         printf("Listening.\n");
         command_loop(cwd);

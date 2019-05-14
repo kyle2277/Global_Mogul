@@ -53,46 +53,6 @@ void serial_recv() {
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
-char* check_input() {
-    char send_server[256] = "args ok?";
-    char *receive = malloc(BUFFER);
-    send(sock_PI, send_server, strlen(send_server), 0);
-    int reply_len = recv(sock_PI, receive, BUFFER, 0);
-    receive[reply_len] = '\0';
-    printf("%s\n", receive);
-    if (strstr(receive, "200")) {
-        //success, get file name
-        sprintf(send_server, "%s", "file name");
-        send(sock_PI, send_server, strlen(send_server), 0);
-        reply_len = recv(sock_PI, receive, BUFFER, 0);
-        receive[reply_len] = '\0';
-        printf("%s\n", receive);
-        // return file name
-        return receive;
-    } else {
-        printf("%s\n", receive);
-        return NULL;
-        //failure
-    }
-}
-
-long get_file_len() {
-    char length_str[BUFFER];
-    char *data_ready = "File length";
-    send(sock_PI, data_ready, strlen(data_ready), 0);
-    int reply_len = recv(sock_PI, length_str, BUFFER, 0);
-    length_str[reply_len] = '\0';
-    long length = strtol(length_str, NULL, 10);
-    printf("file length: %ld\n", length);
-    return length;
-}
-
-void check_output(char *cwd) {
-    char absolute_output[BUFFER];
-    sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
-    mkdir(absolute_output, S_IRWXU);
-}
-
 bool can_write(char* file_name, char* decrypt_path) {
     FILE* f;
     if((f = fopen(decrypt_path, "r"))) {
@@ -111,45 +71,124 @@ bool can_write(char* file_name, char* decrypt_path) {
     return true;
 }
 
-void file_recv(char* file_name, char *cwd) {
-    char decrypt_path[BUFFER];
-    sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
+long get_file_len() {
+    char length_str[BUFFER];
+    //receive file length
+    int reply_len = recv(sock_PI, length_str, BUFFER, 0);
+    length_str[reply_len] = '\0';
+    long length = strtol(length_str, NULL, 10);
+    printf("file length: %ld\n", length);
+    return length;
+}
+
+void check_output(char *cwd) {
+    char absolute_output[BUFFER];
+    sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
+    mkdir(absolute_output, S_IRWXU);
+}
+
+void receive_packets(char *file_bytes, long num_packets, long packet_size, long last_packet, FILE* out) {
+    char packet_bytes[packet_size];
+    for(int i = 0; i < num_packets; i++) {
+        recv(sock_DTP, packet_bytes, packet_size, 0);
+//        snprintf(file_bytes, strlen(file_bytes) + packet_size, "%s%s", file_bytes, packet_bytes);
+        fwrite(packet_bytes, 1, packet_size, out);
+        send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+    }
+    //last packet
+    recv(sock_DTP, packet_bytes, last_packet, 0);
+    snprintf(file_bytes, strlen(file_bytes) + last_packet, "%s%s", file_bytes, packet_bytes);
+    fwrite(packet_bytes, 1, last_packet, out);
+    send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+}
+
+void file_recv(char* file_name, char *decrypt_path, char *cwd) {
+    int len_received;
+    char *file_bytes;
+
     printf("%s\n", "Receiving data ...");
     // write to file using a byte array;
     // data port ready to receive bytes
+    char absolute_path[BUFFER];
+    sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
+    check_output(cwd);
+    FILE* out = fopen(absolute_path, "w");
     long file_len = get_file_len();
-    char* file_bytes = malloc(file_len);
-    // receive the file from the server
-    int len_received = recv(sock_DTP, file_bytes, file_len, 0);
-    printf("bytes received: %d\n", len_received);
+    file_bytes = malloc(file_len);
+    if(file_len <= BUFFER) {
+        // receive the file from the server
+        len_received = recv(sock_DTP, file_bytes, file_len, 0);
+        printf("bytes received: %d\n", len_received);
+        fwrite(file_bytes, 1, file_len, out);
+    } else {
+        //prepare to receive packets
+        //get packet size
+        char packet_size_str[256];
+        long packet_size;
+        send(sock_PI, "packet size?", strlen("packet size?"), 0);
+        len_received = recv(sock_PI, packet_size_str, BUFFER, 0);
+        packet_size_str[len_received] = '\0';
+        printf("Packet size: %s\n", packet_size_str);
+        packet_size = strtol(packet_size_str, NULL, 10);
+        //get last packet size
+        send(sock_PI, "last packet size?", strlen("last packet size?"), 0);
+        char last_packet_str[256];
+        len_received = recv(sock_PI, last_packet_str, BUFFER, 0);
+        last_packet_str[len_received] = '\0';
+        printf("size of last packet: %s\n", last_packet_str);
+        long last_packet = strtol(last_packet_str, NULL, 10);
+        // get number of packets
+        send(sock_PI, "num packets?", strlen("num packets?"), 0);
+        char num_packets_str[256];
+        len_received = recv(sock_PI, num_packets_str, BUFFER, 0);
+        num_packets_str[len_received] = '\0';
+        printf("Number packets: %s\n", num_packets_str);
+        long num_packets = strtol(num_packets_str, NULL, 10);
+        //receive packets
+        receive_packets(file_bytes, num_packets, packet_size, last_packet, out);
+    }
+
+    printf("%s\n", "Processing file ...");
+    fclose(out);
+    // decryption process
+    printf("%s\n", "Decrypting file ...");
+    if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
+        printf("%s\n", "Decryption successful.");
+        // Delete encrypted file
+        remove(absolute_path);
+    } else {
+        printf("%s\n", "Decryption failed.");
+        check_log(cwd);
+    }
+    free(file_bytes);
     //confirm file received
     char *confirm_end = "[200] file received";
     send(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
-    if(can_write(file_name, decrypt_path)) {
-        //save file
-        printf("%s\n", "Processing file ...");
-        char absolute_path[BUFFER];
-        sprintf(absolute_path, "%s/%s/%s%s%s", cwd, OUTPUT, ENCRYPTED_TAG, file_name, ENCRYPTED_EXT);
-        check_output(cwd);
-        FILE* out = fopen(absolute_path, "w");
-        fwrite(file_bytes, 1, file_len, out);
-        fclose(out);
-        // decryption process
-        printf("%s\n", "Decrypting file ...");
-        if(JNI_encrypt(decrypt_path, pass, "decrypt", cwd)) {
-            printf("%s\n", "Decryption successful.");
-            // Delete encrypted file
-            remove(absolute_path);
+
+}
+
+void check_input(char *cwd) {
+    char send_server[256] = "file name?";
+    char *file_name = malloc(BUFFER);
+    send(sock_PI, send_server, strlen(send_server), 0);
+    int reply_len = recv(sock_PI, file_name, BUFFER, 0);
+    file_name[reply_len] = '\0';
+    if(!strstr(file_name, "ERROR")) {
+        printf("%s\n", file_name);
+        char decrypt_path[BUFFER];
+        sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
+        if(can_write(file_name, decrypt_path)) {
+            char *can_send = "200 can send";
+            send(sock_PI, can_send, strlen(can_send), 0);
+            file_recv(file_name, decrypt_path, cwd);
         } else {
-            printf("%s\n", "Decryption failed.");
-            check_log(cwd);
+            // do not send file
+            printf("%s\n", "Process terminated.");
         }
-        free(file_bytes);
     } else {
-        //discard file
-        free(file_bytes);
-        printf("%s\n", "Process terminated.");
+        printf("%s\n", file_name);
+        //failure
     }
 
 }
@@ -196,14 +235,7 @@ bool dispatch(char* input, char *cwd) {
     } else if(strstr(input, "PORT")) {
         port();
     } else if(strstr(input, "RETR")) {
-        char* file_name = check_input();
-        if(file_name) {
-            file_recv(file_name, cwd);
-        } else {
-            printf("%s\n", "Insufficient arguments.");
-        }
-        // freeing memory of path variable
-        free(file_name);
+        check_input(cwd);
     }else if(strstr(input, "QUIT")) {
         return false;
     }
