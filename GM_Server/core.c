@@ -12,7 +12,6 @@
 
 //TODO adapt for cross-platform uses
 //TODO comments
-//TODO send large file in chunks
 
 #define MAX_DATA 1024
 #define ENCRYPTED_TAG "encrypted_"

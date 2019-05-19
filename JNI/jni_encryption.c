@@ -8,11 +8,11 @@
 #define FONT_BLANC "FontBlanc2Main"
 #define FONT_BLANC_PATH "../JNI/Font_Blanc2.0/java"
 #define FONT_BLANC_LOG "../JNI/Font_Blanc2.0/log.txt"
-#define EJML_SIMPLE "../JNI/Font_Blanc/bin/ejml-simple-0.38.jar"
-#define EJML_CORE "../JNI/Font_Blanc/bin/ejml-core-0.38.jar"
-#define EJML_DDENSE "../JNI/Font_Blanc/bin/ejml-ddense-0.38.jar"
-#define EJML_DSPARSE "../JNI/Font_Blanc/bin/ejml-dsparse-0.37.1.jar"
-#define COMMONS_LANG "../JNI/Font_Blanc/bin/commons-lang3-3.8.1.jar"
+#define EJML_SIMPLE "../JNI/Font_Blanc2.0/dependencies/ejml-simple-0.38.jar"
+#define EJML_CORE "../JNI/Font_Blanc2.0/dependencies/ejml-core-0.38.jar"
+#define EJML_DDENSE "../JNI/Font_Blanc2.0/dependencies/ejml-ddense-0.38.jar"
+#define EJML_DSPARSE "../JNI/Font_Blanc2.0/dependencies/ejml-dsparse-0.38.jar"
+#define COMMONS_LANG "../JNI/Font_Blanc2.0/bin/commons-lang3-3.8.1.jar"
 
 #ifdef _WIN32
 #define PATH_SEPARATOR ';'
