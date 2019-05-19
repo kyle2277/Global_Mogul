@@ -8,8 +8,6 @@
 #define DEFAULT_PORT "60000"
 
 //TODO switch strncpy for snprintf where applicable
-//TODO switch port number MUST BE INT use strtoI
-//TODO setsockopt
 //TODO consider changing socket commands to read/write
 
 /*
@@ -26,7 +24,6 @@ void init_PI_socket() {
     remote_server_PI.sin_family = AF_INET;
     remote_server_PI.sin_addr.s_addr = inet_addr(server_addr);
     remote_server_PI.sin_port = htons(atoi(DEFAULT_PORT));
-    char *net_address = inet_ntoa(remote_server_PI.sin_addr);
     bzero(&remote_server_PI.sin_zero, 8);
 }
 

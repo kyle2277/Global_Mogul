@@ -5,13 +5,14 @@
 #include <unistd.h>
 #include "jni_encryption.h"
 
-#define FONT_BLANC "FontBlancMain"
-#define FONT_BLANC_PATH "../JNI/Font_Blanc/java"
-#define FONT_BLANC_LOG "../JNI/Font_Blanc/log.txt"
-#define EJML_SIMPLE "../JNI/Font_Blanc/bin/ejml-simple-0.38.jar"
-#define EJML_CORE "../JNI/Font_Blanc/bin/ejml-core-0.38.jar"
-#define EJML_DDENSE "../JNI/Font_Blanc/bin/ejml-ddense-0.38.jar"
-#define COMMONS_LANG "../JNI/Font_Blanc/bin/commons-lang3-3.8.1.jar"
+#define FONT_BLANC "FontBlanc2Main"
+#define FONT_BLANC_PATH "../JNI/Font_Blanc2.0/java"
+#define FONT_BLANC_LOG "../JNI/Font_Blanc2.0/log.txt"
+#define EJML_SIMPLE "../JNI/Font_Blanc2.0/dependencies/ejml-simple-0.38.jar"
+#define EJML_CORE "../JNI/Font_Blanc2.0/dependencies/ejml-core-0.38.jar"
+#define EJML_DDENSE "../JNI/Font_Blanc2.0/dependencies/ejml-ddense-0.38.jar"
+#define EJML_DSPARSE "../JNI/Font_Blanc2.0/dependencies/ejml-dsparse-0.38.jar"
+#define COMMONS_LANG "../JNI/Font_Blanc2.0/bin/commons-lang3-3.8.1.jar"
 
 #ifdef _WIN32
 #define PATH_SEPARATOR ';'
@@ -31,9 +32,9 @@ bool JNI_init(char *cwd) {
     if(FB_exists(cwd)) {
         JavaVMOption options[1];
         char classpath[MAX_DATA];
-        sprintf(classpath, "-Djava.class.path=%s/%s%c%s/%s%c%s/%s%c%s/%s%c%s/%s", cwd, FONT_BLANC_PATH, PATH_SEPARATOR,
+        sprintf(classpath, "-Djava.class.path=%s/%s%c%s/%s%c%s/%s%c%s/%s%c%s/%s%c%s/%s", cwd, FONT_BLANC_PATH, PATH_SEPARATOR,
                 cwd, EJML_SIMPLE, PATH_SEPARATOR, cwd, EJML_CORE, PATH_SEPARATOR, cwd, EJML_DDENSE, PATH_SEPARATOR,
-                cwd, COMMONS_LANG);
+                cwd, COMMONS_LANG, PATH_SEPARATOR, cwd, EJML_DSPARSE);
         options[0].optionString = classpath;
         //options[1].optionString = "-verbose:jni";
         memset(&vm_args, 0, sizeof(vm_args));
@@ -46,7 +47,7 @@ bool JNI_init(char *cwd) {
 }
 
 int JNI_encrypt(char *full_path, char *encryptKey, char *encrypt, char *cwd) {
-    cls = (*env)->FindClass(env, "FontBlancMain");
+    cls = (*env)->FindClass(env, FONT_BLANC);
     jint num = 0;
     if(cls != 0) {
         mid = (*env)->GetStaticMethodID(env, cls, "main", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
@@ -74,7 +75,7 @@ bool FB_exists(char *cwd) {
         fclose(fb);
         return true;
     }
-    printf("No encryption device found at '%s/%s/%s'\n", cwd, FONT_BLANC_PATH, FONT_BLANC);
+    printf("No encryption device found at '%s\n", full_path);
     return false;
 }
 
@@ -95,6 +96,9 @@ bool check_log(char *cwd) {
     return true;
 }
 
+/*
+ * Deprecated
+ */
 void JNI_end() {
     printf("%s\n", "JVM terminated.");
     (*jvm)->DestroyJavaVM(jvm);

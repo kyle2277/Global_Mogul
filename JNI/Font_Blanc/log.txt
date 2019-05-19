@@ -1,9 +1,0 @@
- 
-2019-04-19 18:20:36.47
-Fatal error:
-Input file "/home/kylej/Documents/Kyle/Dev/ProjectGM/Global_Mogul/GM_Server/user/vtec1.txt" not found
-
-2019-04-22 17:21:22.245
-Fatal error:
-Input file "/home/kylej/Documents/Kyle/Dev/ProjectGM/Global_Mogul/GM_Client/output/vtec.txt" not found
-
