@@ -1,0 +1,24 @@
+2019-05-13 21:45:06.306
+Fatal error:
+Output path not found
+
+2019-05-13 21:46:32.608
+Fatal error:
+Output path not found
+
+2019-05-13 21:49:52.521
+Fatal error:
+Input file /home/kylej/Documents/Kyle/Dev/ProjectGM/Global_Mogul/GM_Client/output/test1.txt path does not exist
+
+2019-05-13 21:49:52.526
+Fatal error:
+Output path not found
+
+2019-05-13 22:25:54.258
+Fatal error:
+Invalid action
+
+2019-05-13 22:27:57.973
+Fatal error:
+Invalid action
+
