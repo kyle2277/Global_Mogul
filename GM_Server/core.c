@@ -304,21 +304,14 @@ bool port(char *args_input) {
         //send client port No.
         print_PI_reply();
         send(client_sock_PI, port_num_str, strlen(port_num_str), 0);
-        DTP_port(port_num_str);
+        DTP_port((int) port_num);
         free(port_num_str);
         return test_DTP_connection();
-    } else if(port_num == 0) {
-        // no number argument
-        char *error = "Insufficient arguments.";
-        send(client_sock_PI, error, strlen(error), 0);
-        free(port_num_str);
-        return false;
     } else {
-        // number outside of range
+        //argument is not a number (port_num == 0) or argument outside of range
         char *error_range = "Port number must be between 60000 and 65535.";
         send(client_sock_PI, error_range, strlen(error_range), 0);
         free(port_num_str);
         return false;
     }
-
 }

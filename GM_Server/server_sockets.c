@@ -37,7 +37,7 @@ void init_PI_socket() {
 
 }
 
-void init_DTP_socket(char *port) {
+void init_DTP_socket(int port) {
     // create DTP socket for server
     if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("server DTP socket");
@@ -46,7 +46,7 @@ void init_DTP_socket(char *port) {
 
     //initialize values in server_DTP socket
     server_DTP.sin_family = AF_INET;
-    server_DTP.sin_port = htons(atoi(port)-1);
+    server_DTP.sin_port = htons(port);
     server_DTP.sin_addr.s_addr = htonl(INADDR_ANY);
     bzero(&server_DTP.sin_zero, 8);
 
@@ -104,7 +104,7 @@ void connect_DTP() {
     printf("client DTP accepted\n");
 }
 
-void DTP_port(char *port_num) {
+void DTP_port(int port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
     bzero(&server_DTP, sizeof(server_DTP));
     bzero(&client_DTP, sizeof(client_DTP));

@@ -15,10 +15,10 @@ char server_addr[256];
 int sockaddr_len;
 
 void init_PI_socket();
-void init_DTP_socket(char *port);
+void init_DTP_socket(int port);
 void connect_PI();
 void connect_DTP();
-void DTP_port(char *port_num);
+void DTP_port(int port_num);
 void set_server_addr(char *address);
 
 #endif //GM_CLIENT_CLIENT_SOCKETS_H

@@ -13,11 +13,11 @@ int client_sock_DTP; // reference to connected client DTP socket
 int sockaddr_len;
 
 void init_PI_socket();
-void init_DTP_socket(char *port);
+void init_DTP_socket(int port);
 void listen_PI();
 void listen_DTP();
 void connect_PI();
 void connect_DTP();
-void DTP_port(char *port_num);
+void DTP_port(int port_num);
 
 #endif //GM_SERVER_SERVER_SOCKETS_H

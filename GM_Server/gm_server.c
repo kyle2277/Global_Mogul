@@ -11,7 +11,7 @@
 #define ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
-#define DEFAULT_PORT "60000"
+#define DEFAULT_PORT 60000
 
 void command_loop(char *cwd) {
     char receive[MAX_DATA];
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
     init_PI_socket();
-    init_DTP_socket(DEFAULT_PORT);
+    init_DTP_socket(DEFAULT_PORT-1);
     listen_PI();
     listen_DTP();
 

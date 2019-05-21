@@ -214,13 +214,13 @@ void port() {
     if(strstr(receive, "200")) {
         //delete DTP port
         //ask port number
-        strncpy(send_server, "Port No.?", strlen("Port No.?"));
+        strcpy(send_server, "Port No.?");
         send(sock_PI, send_server, strlen(send_server), 0);
         printf("%s\n", send_server);
         len = recv(sock_PI, receive, BUFFER, 0);
         receive[len] = '\0';
         printf("%s\n", receive);
-        DTP_port(receive);
+        DTP_port(atoi(receive));
         test_DTP_connection();
     }
 }

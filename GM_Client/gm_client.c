@@ -9,7 +9,7 @@
 
 #define ERROR -1
 #define BUFFER 1024
-#define DEFAULT_PORT "60000"
+#define DEFAULT_PORT 60000
 
 //todo clean up global variables
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     getcwd(cwd, sizeof(cwd));
     sockaddr_len = sizeof(struct sockaddr_in);
     init_PI_socket();
-    init_DTP_socket(DEFAULT_PORT);
+    init_DTP_socket(DEFAULT_PORT-1);
 
     connect_PI();
     send_auth();

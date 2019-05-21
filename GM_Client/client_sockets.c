@@ -27,7 +27,7 @@ void init_PI_socket() {
     bzero(&remote_server_PI.sin_zero, 8);
 }
 
-void init_DTP_socket(char *port) {
+void init_DTP_socket(int port) {
     if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
         perror("client DTP socket");
         exit(-1);
@@ -36,7 +36,7 @@ void init_DTP_socket(char *port) {
     //initialize remote server DTP values
     remote_server_DTP.sin_family = AF_INET;
     remote_server_DTP.sin_addr.s_addr = inet_addr(server_addr);
-    remote_server_DTP.sin_port = htons(atoi(port)-1);
+    remote_server_DTP.sin_port = htons(port);
     bzero(&remote_server_DTP.sin_zero, 8);
 }
 
@@ -66,7 +66,7 @@ void set_server_addr(char *address) {
     strncpy(server_addr, address, strlen(address));
 }
 
-void DTP_port(char *port_num) {
+void DTP_port(int port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
     bzero(&remote_server_DTP, sizeof(remote_server_DTP));
     init_DTP_socket(port_num);
