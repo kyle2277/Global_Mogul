@@ -8,6 +8,8 @@ set(JNI ${JAVA}/include)
 
 if(WIN32)
     #set windows JNI variables
+    set(JNI_LIB ${JAVA}/jre/bin/server/jvm.dll)
+    set(JNI_OS ${JNI}/win32)
 elseif(APPLE)
     #set mac JNI variables
     set(JNI_LIB ${JAVA}/jre/lib/server/libjvm.dylib)
