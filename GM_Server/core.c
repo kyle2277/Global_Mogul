@@ -75,7 +75,8 @@ void dir_list(char *cwd) {
 void help_list() {
     char receive[MAX_DATA];
     char *send_client = "Commands:\nECHO - echoes input\nLIST - lists retrievable files\n"
-                         "RETR <file name> - retrieve file\nNOOP - check connection\nHELP - help list\nQUIT - exit";
+                         "RETR <file name> - retrieve file\nPORT <port number> - change data transmission port (must be between 60001 and 65535)\n"
+                         "NOOP - check connection\nHELP - help list\nQUIT - exit";
     send(client_sock_DTP, send_client, strlen(send_client), 0);
     recv(client_sock_DTP, receive, MAX_DATA, 0);
     char *end = "end";
