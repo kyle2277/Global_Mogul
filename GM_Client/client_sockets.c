@@ -5,7 +5,7 @@
 #define BUFFER 1024
 #define DEFAULT_PORT "60000"
 
-#if _WIN32
+#ifdef _WIN32
 //Windows systems
 #include <winsock2.h>
 #include <windows.h>
