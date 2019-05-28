@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <errno.h>
-#include <arpa/inet.h>
+
 #include <unistd.h>
 #include <sys/stat.h>
 #include "../JNI/jni_encryption.h"
@@ -13,6 +12,40 @@
 #define OUTPUT "output"
 #define ENCRYPTED_TAG "encrypted_"
 #define ENCRYPTED_EXT ".txt"
+
+#ifdef _WIN32
+
+//Windows system
+#include <winsock2.h>
+#define ERROR SOCKET_ERROR
+#define GET_ERROR WSAGetLastError()
+
+#else
+
+//Linux and Mac OSX systems
+#include <arpa/inet.h>
+#include <errno.h>
+#define ERROR -1
+#define GET_ERROR errno
+
+#endif
+
+void sendData(int socket, char *sendStr, int strLen, int flags) {
+    resetErrno();
+    int status = send(socket, sendStr, strLen, flags);
+    if(status == ERROR) {
+        printf("Failed to send data with error: %d\n", GET_ERROR);
+    }
+}
+
+int recvData(int socket, char *recvStr, int recvBuffer, int flags) {
+    resetErrno();
+    int status = recv(socket, recvStr, recvBuffer, flags);
+    if(status == ERROR) {
+        printf("Failed to receive data with error: %d\n", GET_ERROR);
+    }
+    return status;
+}
 
 /* DEPRECATED */
 void echo_loop() {
@@ -24,12 +57,12 @@ void echo_loop() {
         // fgets() reads input (containing spaces) from user, stores in provided string (input)
         fgets(input, BUFFER, stdin);
         char *quit = strstr(input, "QUIT");
-        send(sock_PI, input, strlen(input), 0);
+        sendData(sock_PI, input, strlen(input), 0);
         // check if the user wants to terminate the program
         if(quit) {
             run = false;
         }
-        reply_len = recv(sock_DTP, output, BUFFER, 0);
+        reply_len = recvData(sock_DTP, output, BUFFER, 0);
         output[reply_len] = '\0';
         printf("%s\n", output);
     }
@@ -41,16 +74,16 @@ void serial_recv() {
     char *received = "200"; // confirmation to server when data packet received
     // lets server know data port is ready to receive data
     char *data_ready = "DTP ready";
-    send(sock_DTP, data_ready, strlen(data_ready), 0);
-    reply_len = recv(sock_DTP, receive, BUFFER, 0);
+    sendData(sock_DTP, data_ready, strlen(data_ready), 0);
+    reply_len = recvData(sock_DTP, receive, BUFFER, 0);
     do {
         receive[reply_len] = '\0';
         printf("%s\n", receive);
-        send(sock_DTP, received, strlen(received), 0);
-        reply_len = recv(sock_DTP, receive, BUFFER, 0);
+        sendData(sock_DTP, received, strlen(received), 0);
+        reply_len = recvData(sock_DTP, receive, BUFFER, 0);
     } while (!strstr(receive, "end"));
     char *confirm_end = "end received";
-    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+    sendData(sock_DTP, confirm_end, strlen(confirm_end), 0);
 }
 
 bool can_write(char* file_name, char* decrypt_path) {
@@ -74,7 +107,7 @@ bool can_write(char* file_name, char* decrypt_path) {
 long get_file_len() {
     char length_str[BUFFER];
     //receive file length
-    int reply_len = recv(sock_PI, length_str, BUFFER, 0);
+    int reply_len = recvData(sock_PI, length_str, BUFFER, 0);
     length_str[reply_len] = '\0';
     long length = strtol(length_str, NULL, 10);
     printf("file length: %ld\n", length);
@@ -90,16 +123,16 @@ void check_output(char *cwd) {
 void receive_packets(char *file_bytes, long num_packets, long packet_size, long last_packet, FILE* out) {
     char packet_bytes[packet_size];
     for(int i = 0; i < num_packets; i++) {
-        recv(sock_DTP, packet_bytes, packet_size, 0);
+        recvData(sock_DTP, packet_bytes, packet_size, 0);
 //        snprintf(file_bytes, strlen(file_bytes) + packet_size, "%s%s", file_bytes, packet_bytes);
         fwrite(packet_bytes, 1, packet_size, out);
-        send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+        sendData(sock_DTP, "200 OK", strlen("200 OK"), 0);
     }
     //last packet
-    recv(sock_DTP, packet_bytes, last_packet, 0);
+    recvData(sock_DTP, packet_bytes, last_packet, 0);
     snprintf(file_bytes, strlen(file_bytes) + last_packet, "%s%s", file_bytes, packet_bytes);
     fwrite(packet_bytes, 1, last_packet, out);
-    send(sock_DTP, "200 OK", strlen("200 OK"), 0);
+    sendData(sock_DTP, "200 OK", strlen("200 OK"), 0);
 }
 
 void file_recv(char* file_name, char *decrypt_path, char *cwd) {
@@ -117,7 +150,7 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
     file_bytes = malloc(file_len);
     if(file_len <= BUFFER) {
         // receive the file from the server
-        len_received = recv(sock_DTP, file_bytes, file_len, 0);
+        len_received = recvData(sock_DTP, file_bytes, file_len, 0);
         printf("bytes received: %d\n", len_received);
         fwrite(file_bytes, 1, file_len, out);
     } else {
@@ -125,22 +158,22 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
         //get packet size
         char packet_size_str[256];
         long packet_size;
-        send(sock_PI, "packet size?", strlen("packet size?"), 0);
-        len_received = recv(sock_PI, packet_size_str, BUFFER, 0);
+        sendData(sock_PI, "packet size?", strlen("packet size?"), 0);
+        len_received = recvData(sock_PI, packet_size_str, BUFFER, 0);
         packet_size_str[len_received] = '\0';
         printf("Packet size: %s\n", packet_size_str);
         packet_size = strtol(packet_size_str, NULL, 10);
         //get last packet size
-        send(sock_PI, "last packet size?", strlen("last packet size?"), 0);
+        sendData(sock_PI, "last packet size?", strlen("last packet size?"), 0);
         char last_packet_str[256];
-        len_received = recv(sock_PI, last_packet_str, BUFFER, 0);
+        len_received = recvData(sock_PI, last_packet_str, BUFFER, 0);
         last_packet_str[len_received] = '\0';
         printf("size of last packet: %s\n", last_packet_str);
         long last_packet = strtol(last_packet_str, NULL, 10);
         // get number of packets
-        send(sock_PI, "num packets?", strlen("num packets?"), 0);
+        sendData(sock_PI, "num packets?", strlen("num packets?"), 0);
         char num_packets_str[256];
-        len_received = recv(sock_PI, num_packets_str, BUFFER, 0);
+        len_received = recvData(sock_PI, num_packets_str, BUFFER, 0);
         num_packets_str[len_received] = '\0';
         printf("Number packets: %s\n", num_packets_str);
         long num_packets = strtol(num_packets_str, NULL, 10);
@@ -163,7 +196,7 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
     free(file_bytes);
     //confirm file received
     char *confirm_end = "[200] file received";
-    send(sock_DTP, confirm_end, strlen(confirm_end), 0);
+    sendData(sock_DTP, confirm_end, strlen(confirm_end), 0);
     printf("%s\n", confirm_end);
 
 }
@@ -171,8 +204,8 @@ void file_recv(char* file_name, char *decrypt_path, char *cwd) {
 void check_input(char *cwd) {
     char send_server[256] = "file name?";
     char *file_name = malloc(BUFFER);
-    send(sock_PI, send_server, strlen(send_server), 0);
-    int reply_len = recv(sock_PI, file_name, BUFFER, 0);
+    sendData(sock_PI, send_server, strlen(send_server), 0);
+    int reply_len = recvData(sock_PI, file_name, BUFFER, 0);
     file_name[reply_len] = '\0';
     if(!strstr(file_name, "ERROR")) {
         printf("%s\n", file_name);
@@ -180,7 +213,7 @@ void check_input(char *cwd) {
         sprintf(decrypt_path, "%s/%s/%s", cwd, OUTPUT, file_name);
         if(can_write(file_name, decrypt_path)) {
             char *can_send = "200 can send";
-            send(sock_PI, can_send, strlen(can_send), 0);
+            sendData(sock_PI, can_send, strlen(can_send), 0);
             file_recv(file_name, decrypt_path, cwd);
         } else {
             // do not send file
@@ -195,9 +228,9 @@ void check_input(char *cwd) {
 
 void test_DTP_connection() {
     char *send_server = "200";
-    send(sock_DTP, send_server, strlen(send_server), 0);
+    sendData(sock_DTP, send_server, strlen(send_server), 0);
     char receive[BUFFER];
-    int len = recv(sock_DTP, receive, BUFFER, 0);
+    int len = recvData(sock_DTP, receive, BUFFER, 0);
     receive[len] = '\0';
     printf("%s\n", receive);
 }
@@ -205,9 +238,9 @@ void test_DTP_connection() {
 void port() {
     char send_server[256] = "delete DTP?";
     send_server[strlen(send_server)] = '\0';
-    send(sock_PI, send_server, strlen(send_server), 0);
+    sendData(sock_PI, send_server, strlen(send_server), 0);
     char receive[BUFFER];
-    int len = recv(sock_PI, receive, BUFFER, 0);
+    int len = recvData(sock_PI, receive, BUFFER, 0);
     receive[len] = '\0';
     printf("%s\n", receive);
     //recieve 200 or error message
@@ -215,9 +248,9 @@ void port() {
         //delete DTP port
         //ask port number
         strcpy(send_server, "Port No.?");
-        send(sock_PI, send_server, strlen(send_server), 0);
+        sendData(sock_PI, send_server, strlen(send_server), 0);
         printf("%s\n", send_server);
-        len = recv(sock_PI, receive, BUFFER, 0);
+        len = recvData(sock_PI, receive, BUFFER, 0);
         receive[len] = '\0';
         printf("%s\n", receive);
         DTP_port(atoi(receive));

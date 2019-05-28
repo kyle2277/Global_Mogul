@@ -36,8 +36,7 @@ void command_loop(char *cwd) {
         memset(input, '\0', BUFFER);
     }
     clean_pass();
-    shutdown(sock_PI, SHUT_RDWR);
-    shutdown(sock_DTP, SHUT_RDWR);
+    shutdownAll();
 }
 
 int main(int argc, char *argv[]) {
@@ -45,6 +44,9 @@ int main(int argc, char *argv[]) {
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
     sockaddr_len = sizeof(struct sockaddr_in);
+#ifdef _WIN32
+    init_Winsock();
+#endif
     init_PI_socket();
     init_DTP_socket(DEFAULT_PORT-1);
 
