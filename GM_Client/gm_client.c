@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+
 #include "client_sockets.h"
 #include "client_auth.h"
 #include "core.h"
 
+#ifdef _WIN32
+#include <WinSock2.h>
+#else
+#include <arpa/inet.h>
+#include <unistd.h>
+#endif
 #define ERROR -1
 #define BUFFER 1024
 #define DEFAULT_PORT 60000

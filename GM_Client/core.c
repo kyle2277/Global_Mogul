@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
-
-#include <unistd.h>
 #include <sys/stat.h>
 #include "../JNI/jni_encryption.h"
 #include "client_sockets.h"
@@ -14,9 +11,8 @@
 #define ENCRYPTED_EXT ".txt"
 
 #ifdef _WIN32
-
 //Windows system
-#include <winsock2.h>
+#include <WinSock2.h>
 #define ERROR SOCKET_ERROR
 #define GET_ERROR WSAGetLastError()
 
@@ -117,11 +113,16 @@ long get_file_len() {
 void check_output(char *cwd) {
     char absolute_output[BUFFER];
     sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
-    mkdir(absolute_output, S_IRWXU);
+#ifdef _WIN32
+	mkdir(absolute_output);
+#else
+	mkdir(absolute_output, S_IRWXU);
+#endif
+	
 }
 
 void receive_packets(char *file_bytes, long num_packets, long packet_size, long last_packet, FILE* out) {
-    char packet_bytes[packet_size];
+	char packet_bytes[packet_size];
     for(int i = 0; i < num_packets; i++) {
         recvData(sock_DTP, packet_bytes, packet_size, 0);
 //        snprintf(file_bytes, strlen(file_bytes) + packet_size, "%s%s", file_bytes, packet_bytes);
