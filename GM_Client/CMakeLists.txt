@@ -9,9 +9,12 @@ if(WIN32)
     #path separator
     set(SEP \\)
     set(JNI ${JAVA}${SEP}include)
+    string(REPLACE ${SEP} "/" JNI ${JNI})
     #set windows JNI variables
     set(JNI_LIB ${JAVA}${SEP}jre${SEP}bin${SEP}server${SEP}jvm.dll)
+    string(REPLACE ${SEP} "/" JNI_LIB ${JNI_LIB})
     set(JNI_OS ${JNI}${SEP}win32)
+    string(REPLACE ${SEP} "/" JNI_OS ${JNI_OS})
 elseif(APPLE)
     #path separator
     set(SEP /)
