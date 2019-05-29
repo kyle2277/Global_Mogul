@@ -6,7 +6,7 @@
 #include "core.h"
 
 // pre-processor definitions
-#define ERROR -1
+#define SOCK_ERROR -1
 #define MAX_CLIENTS 1
 #define MAX_DATA 1024
 #define DEFAULT_PORT "60000"
@@ -17,7 +17,7 @@
 void init_PI_socket() {
     // create PI socket for server
     //protocol set to 0 uses TCP
-    if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
+    if((sock_PI = socket(PF_INET, SOCK_STREAM, 0)) == SOCK_ERROR) {
         perror("server PI socket");
         exit(-1);
     }
@@ -30,7 +30,7 @@ void init_PI_socket() {
     memset(&server_PI.sin_zero, '\0', 8);
 
     // bind the server PI socket to the PI port
-    if((bind(sock_PI, (struct sockaddr *)&server_PI, sockaddr_len)) == ERROR) {
+    if((bind(sock_PI, (struct sockaddr *)&server_PI, sockaddr_len)) == SOCK_ERROR) {
         perror("binding PI socket to port");
         exit(-1);
     }
@@ -39,7 +39,7 @@ void init_PI_socket() {
 
 void init_DTP_socket(int port) {
     // create DTP socket for server
-    if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == ERROR) {
+    if((sock_DTP = socket(PF_INET, SOCK_STREAM, 0)) == SOCK_ERROR) {
         perror("server DTP socket");
         exit(-1);
     }
@@ -51,7 +51,7 @@ void init_DTP_socket(int port) {
     memset(&server_DTP.sin_zero, '\0', 8);
 
     //bind the server DTP socket to the DTP port
-    if((bind(sock_DTP, (struct sockaddr *)&server_DTP, sockaddr_len)) == ERROR) {
+    if((bind(sock_DTP, (struct sockaddr *)&server_DTP, sockaddr_len)) == SOCK_ERROR) {
         perror("binding DTP socket to port");
         exit(-1);
     }
@@ -62,7 +62,7 @@ void init_DTP_socket(int port) {
  * Instructs kernel to listen on server PI socket
  */
 void listen_PI() {
-    if((listen(sock_PI, MAX_CLIENTS)) == ERROR) {
+    if((listen(sock_PI, MAX_CLIENTS)) == SOCK_ERROR) {
         perror("listen_PI");
         exit(-1);
     }
@@ -72,7 +72,7 @@ void listen_PI() {
  * Instructs kernel to listen on server DTP socket
  */
 void listen_DTP() {
-    if((listen(sock_DTP, MAX_CLIENTS)) == ERROR) {
+    if((listen(sock_DTP, MAX_CLIENTS)) == SOCK_ERROR) {
         perror("listen DTP");
         exit(-1);
     }
@@ -83,7 +83,7 @@ void listen_DTP() {
  * accept() returns new socket descriptor, used to send/receive data from this client
  */
 void connect_PI() {
-    if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == ERROR) {
+    if((client_sock_PI = accept(sock_PI, (struct sockaddr *)&client_PI, &sockaddr_len)) == SOCK_ERROR) {
         perror("accept client PI");
         exit(-1);
     }
@@ -97,7 +97,7 @@ void connect_PI() {
  * Waiting for DTP connection from client
  */
 void connect_DTP() {
-    if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == ERROR) {
+    if((client_sock_DTP = accept(sock_DTP, (struct sockaddr *)&client_DTP, &sockaddr_len)) == SOCK_ERROR) {
         perror("accept client DTP");
         exit(-1);
     }
