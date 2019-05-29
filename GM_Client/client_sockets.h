@@ -5,9 +5,9 @@
 #ifndef GM_CLIENT_CLIENT_SOCKETS_H
 #define GM_CLIENT_CLIENT_SOCKETS_H
 #define BUFFER 1024
-#include <WinSock2.h>
 
 #ifdef _WIN32
+#include <WinSock2.h>
 SOCKET sock_PI;
 SOCKET sock_DTP;
 #else

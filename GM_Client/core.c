@@ -122,17 +122,20 @@ void check_output(char *cwd) {
 }
 
 void receive_packets(char *file_bytes, long num_packets, long packet_size, long last_packet, FILE* out) {
-	char packet_bytes[packet_size];
+	char *packet_bytes = malloc(packet_size);
     for(int i = 0; i < num_packets; i++) {
         recvData(sock_DTP, packet_bytes, packet_size, 0);
 //        snprintf(file_bytes, strlen(file_bytes) + packet_size, "%s%s", file_bytes, packet_bytes);
         fwrite(packet_bytes, 1, packet_size, out);
         sendData(sock_DTP, "200 OK", strlen("200 OK"), 0);
     }
+    free(packet_bytes);
     //last packet
+    char *last_pkt = malloc(last_packet);
     recvData(sock_DTP, packet_bytes, last_packet, 0);
     snprintf(file_bytes, strlen(file_bytes) + last_packet, "%s%s", file_bytes, packet_bytes);
     fwrite(packet_bytes, 1, last_packet, out);
+    free(last_pkt);
     sendData(sock_DTP, "200 OK", strlen("200 OK"), 0);
 }
 
