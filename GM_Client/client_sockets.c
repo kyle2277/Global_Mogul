@@ -29,7 +29,7 @@ void resetErrno(){};
 void DTP_port(int port_num) {
     closesocket(sock_DTP);
     WSACleanup();
-    bzero(&remote_server_DTP, sizeof(remote_server_DTP));
+    memset(&remote_server_DTP, '\0', sizeof(remote_server_DTP));
     init_DTP_socket(port_num);
     connect_DTP();
 }
@@ -52,7 +52,7 @@ void resetErrno() {
 
 void DTP_port(int port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
-    bzero(&remote_server_DTP, sizeof(remote_server_DTP));
+    memset(&remote_server_DTP, '\0', sizeof(remote_server_DTP));
     init_DTP_socket(port_num);
     connect_DTP();
 }
@@ -81,7 +81,7 @@ void init_PI_socket() {
     remote_server_PI.sin_family = AF_INET;
     remote_server_PI.sin_addr.s_addr = inet_addr(server_addr);
     remote_server_PI.sin_port = htons(atoi(DEFAULT_PORT));
-    bzero(&remote_server_PI.sin_zero, 8);
+    memset(&remote_server_PI.sin_zero, '\0', 8);
 }
 
 void init_DTP_socket(int port) {
@@ -95,7 +95,7 @@ void init_DTP_socket(int port) {
     remote_server_DTP.sin_family = AF_INET;
     remote_server_DTP.sin_addr.s_addr = inet_addr(server_addr);
     remote_server_DTP.sin_port = htons(port);
-    bzero(&remote_server_DTP.sin_zero, 8);
+    memset(&remote_server_DTP.sin_zero, '\0', 8);
 }
 
 /*

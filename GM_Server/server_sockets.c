@@ -27,7 +27,7 @@ void init_PI_socket() {
     // htons = host byte order to network byte order
     server_PI.sin_port = htons(atoi(DEFAULT_PORT)); // atoi = ascii to integer
     server_PI.sin_addr.s_addr = htonl(INADDR_ANY); // listen on all interfaces on host at specified port sin_port
-    bzero(&server_PI.sin_zero, 8);
+    memset(&server_PI.sin_zero, '\0', 8);
 
     // bind the server PI socket to the PI port
     if((bind(sock_PI, (struct sockaddr *)&server_PI, sockaddr_len)) == ERROR) {
@@ -48,7 +48,7 @@ void init_DTP_socket(int port) {
     server_DTP.sin_family = AF_INET;
     server_DTP.sin_port = htons(port);
     server_DTP.sin_addr.s_addr = htonl(INADDR_ANY);
-    bzero(&server_DTP.sin_zero, 8);
+    memset(&server_DTP.sin_zero, '\0', 8);
 
     //bind the server DTP socket to the DTP port
     if((bind(sock_DTP, (struct sockaddr *)&server_DTP, sockaddr_len)) == ERROR) {
@@ -106,8 +106,8 @@ void connect_DTP() {
 
 void DTP_port(int port_num) {
     shutdown(sock_DTP, SHUT_RDWR);
-    bzero(&server_DTP, sizeof(server_DTP));
-    bzero(&client_DTP, sizeof(client_DTP));
+    memset(&server_DTP, '\0', sizeof(server_DTP));
+    memset(&client_DTP, '\0', sizeof(client_DTP));
     init_DTP_socket(port_num);
     listen_DTP();
     connect_DTP();
