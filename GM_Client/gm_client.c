@@ -8,6 +8,8 @@
 
 #ifdef _WIN32
 #include <WinSock2.h>
+#include <direct.h>
+#define getcwd _getcwd
 #else
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -46,7 +48,7 @@ void command_loop(char *cwd) {
 
 int main(int argc, char *argv[]) {
     set_server_addr(argv[1]);
-    char cwd[256];
+    char *cwd = malloc(256);
     getcwd(cwd, sizeof(cwd));
     sockaddr_len = sizeof(struct sockaddr_in);
 #ifdef _WIN32
@@ -64,6 +66,7 @@ int main(int argc, char *argv[]) {
     connect_DTP();
     command_loop(cwd);
     JNI_end();
+    free(cwd);
     return 0;
 }
 

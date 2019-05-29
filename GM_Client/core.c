@@ -13,6 +13,7 @@
 #ifdef _WIN32
 //Windows system
 #include <WinSock2.h>
+#include <direct.h>
 #define ERROR SOCKET_ERROR
 #define GET_ERROR WSAGetLastError()
 
@@ -114,7 +115,7 @@ void check_output(char *cwd) {
     char absolute_output[BUFFER];
     sprintf(absolute_output, "%s/%s", cwd, OUTPUT);
 #ifdef _WIN32
-	mkdir(absolute_output);
+	_mkdir(absolute_output);
 #else
 	mkdir(absolute_output, S_IRWXU);
 #endif

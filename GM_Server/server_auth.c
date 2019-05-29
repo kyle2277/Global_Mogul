@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <errno.h>
 #include <dirent.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include "server_auth.h"
 #include "server_sockets.h"
