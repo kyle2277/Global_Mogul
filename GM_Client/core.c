@@ -20,6 +20,7 @@
 #else
 
 //Linux and Mac OSX systems
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #define ERROR -1
