@@ -12,7 +12,7 @@
 
 #ifdef _WIN32
 //Windows system
-#include <WinSock2.h>
+#include <winsock2.h>
 #include <direct.h>
 #define SOCK_ERROR SOCKET_ERROR
 #define GET_ERROR WSAGetLastError()
