@@ -14,7 +14,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #endif
-#define ERROR -1
 #define BUFFER 1024
 #define DEFAULT_PORT 60000
 
