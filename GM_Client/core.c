@@ -14,7 +14,7 @@
 //Windows system
 #include <WinSock2.h>
 #include <direct.h>
-#define ERROR SOCKET_ERROR
+#define SOCK_ERROR SOCKET_ERROR
 #define GET_ERROR WSAGetLastError()
 
 #else
@@ -23,7 +23,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
-#define ERROR -1
+#define SOCK_ERROR -1
 #define GET_ERROR errno
 
 #endif
@@ -31,7 +31,7 @@
 void sendData(int socket, char *sendStr, int strLen, int flags) {
     resetErrno();
     int status = send(socket, sendStr, strLen, flags);
-    if(status == ERROR) {
+    if(status == SOCK_ERROR) {
         printf("Failed to send data with error: %d\n", GET_ERROR);
     }
 }
@@ -39,7 +39,7 @@ void sendData(int socket, char *sendStr, int strLen, int flags) {
 int recvData(int socket, char *recvStr, int recvBuffer, int flags) {
     resetErrno();
     int status = recv(socket, recvStr, recvBuffer, flags);
-    if(status == ERROR) {
+    if(status == SOCK_ERROR) {
         printf("Failed to receive data with error: %d\n", GET_ERROR);
     }
     return status;
