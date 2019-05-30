@@ -48,8 +48,9 @@ void command_loop(char *cwd) {
 
 int main(int argc, char *argv[]) {
     set_server_addr(argv[1]);
-    char *cwd = malloc(256);
+    char cwd[256];
     getcwd(cwd, sizeof(cwd));
+    printf("cwd: %s\n", cwd);
     sockaddr_len = sizeof(struct sockaddr_in);
 #ifdef _WIN32
     init_Winsock();
@@ -66,7 +67,6 @@ int main(int argc, char *argv[]) {
     connect_DTP();
     command_loop(cwd);
     JNI_end();
-    free(cwd);
     return 0;
 }
 
