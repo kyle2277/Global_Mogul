@@ -12,6 +12,7 @@
 
 #ifdef _WIN32
 //Windows system
+//#pragma comment(lib,"ws2_32.lib") //Winsock Library
 #include <winsock2.h>
 #include <direct.h>
 #define SOCK_ERROR SOCKET_ERROR

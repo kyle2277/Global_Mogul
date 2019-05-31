@@ -6,6 +6,7 @@
 #include "core.h"
 
 #ifdef _WIN32
+//#pragma comment(lib,"ws2_32.lib") //Winsock Library
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>

@@ -7,8 +7,8 @@
 
 #ifdef _WIN32
 //Windows systems
+//#pragma comment(lib,"ws2_32.lib") //Winsock Library
 #include <winsock2.h>
-#pragma comment(lib,"ws2_32.lib") //Winsock Library
 #define SOCK_ERROR SOCKET_ERROR
 #define GET_ERROR WSAGetLastError()
 
@@ -19,7 +19,7 @@ void init_Winsock() {
     if((iResult = WSAStartup(MAKEWORD(2,2), &wsaData) != 0)) {
         printf("WSAStartup failed: %d\n", iResult);
     } else {
-        printf("Winsock Initialized.");
+        printf("Winsock Initialized.\n");
     }
 }
 

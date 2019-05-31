@@ -8,15 +8,15 @@ find_package(JNI)
 if(${JNI_FOUND})
     #use JNI vars
     message(STATUS "Found JNI: ${JNI_FOUND}")
+    message(STATUS "JNI LIBRARY: ${JAVA_JVM_LIBRARY}")
     include_directories(${JNI_INCLUDE_DIRS})
     link_directories(${JNI_LIBRARIES})
     add_executable(GM_Client ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2} gm_client.c client_sockets.c client_sockets.h client_auth.c client_auth.h core.c core.h ../JNI/jni_encryption.c ../JNI/jni_encryption.h)
-    target_link_libraries(GM_Client ${JAVA_JVM_LIBRARY})
+    target_link_libraries(GM_Client ${JAVA_JVM_LIBRARY} wsock32 ws2_32)
 else()
     #use JAVA_HOME vars
     set(JAVA $ENV{JAVA_HOME})
     string(REPLACE "\\" "/" JAVA ${JAVA})
-
     if(WIN32)
         #path separator
         set(SEP \\)
