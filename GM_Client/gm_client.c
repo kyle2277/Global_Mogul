@@ -1,13 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+
 #include "client_sockets.h"
 #include "client_auth.h"
 #include "core.h"
 
-#define ERROR -1
+#ifdef _WIN32
+//#pragma comment(lib,"ws2_32.lib") //Winsock Library
+#include <winsock2.h>
+#include <direct.h>
+#define getcwd _getcwd
+#else
+#include <arpa/inet.h>
+#include <unistd.h>
+#endif
 #define BUFFER 1024
 #define DEFAULT_PORT 60000
 
@@ -36,15 +43,18 @@ void command_loop(char *cwd) {
         memset(input, '\0', BUFFER);
     }
     clean_pass();
-    shutdown(sock_PI, SHUT_RDWR);
-    shutdown(sock_DTP, SHUT_RDWR);
+    shutdownAll();
 }
 
 int main(int argc, char *argv[]) {
     set_server_addr(argv[1]);
     char cwd[256];
     getcwd(cwd, sizeof(cwd));
+    printf("cwd: %s\n", cwd);
     sockaddr_len = sizeof(struct sockaddr_in);
+#ifdef _WIN32
+    init_Winsock();
+#endif
     init_PI_socket();
     init_DTP_socket(DEFAULT_PORT-1);
 

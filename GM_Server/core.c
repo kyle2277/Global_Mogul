@@ -1,10 +1,8 @@
-#include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <unistd.h>
-#include <asm/errno.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include "server_auth.h"
 #include "server_sockets.h"

@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include "jni_encryption.h"
 
 #define FONT_BLANC "FontBlanc2Main"
