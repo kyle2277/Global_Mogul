@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include "../JNI/jni_encryption.h"
-//change location of these varibles
+//change location of these variables
 struct sockaddr_in server_PI;
 struct sockaddr_in server_DTP;
 struct sockaddr_in client_PI;

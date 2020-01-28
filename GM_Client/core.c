@@ -202,6 +202,7 @@ void test_DTP_connection() {
     printf("%s\n", receive);
 }
 
+//netstat -t
 void port() {
     char send_server[256] = "delete DTP?";
     send_server[strlen(send_server)] = '\0';
@@ -230,7 +231,7 @@ bool dispatch(char* input, char *cwd) {
         echo_loop();
     } else if(strstr(input, "LIST")) {
         serial_recv();
-    } else if(strstr(input, "HELP")) {
+    } else if(strstr(input, "HELP") || strstr(input, "help")) {
         serial_recv();
     } else if(strstr(input, "PORT")) {
         port();

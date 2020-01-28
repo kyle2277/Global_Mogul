@@ -41,7 +41,7 @@ void command_loop(char *cwd) {
             send(client_sock_PI, send_client, strlen(send_client), 0);
             // list available files
             list("LIST", cwd);
-        } else if(strstr(receive, "HELP")) {
+        } else if(strstr(receive, "HELP") || strstr(receive, "help")) {
             char *send_client = "Help list";
             printf("%s\n", send_client);
             send(client_sock_PI, send_client, strlen(send_client), 0);
