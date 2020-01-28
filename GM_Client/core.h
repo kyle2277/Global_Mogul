@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include "../JNI/jni_encryption.h"
 
+void sendData(int socket, char *sendStr, int strLen, int flags);
+int recvData(int socket, char *recvStr, int recvBuffer, int flags);
 void echo_loop();
 void serial_recv();
 void check_input(char *cwd);
